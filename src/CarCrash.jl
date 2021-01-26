@@ -7,10 +7,30 @@ using Interact
 using Reel
 using Blink
 
-export simulate_scene
+export simulate_scene, animate_scene, check_collision
 
 AutoViz.set_render_mode(:fancy)
 AutoViz.colortheme["background"] = colorant"black"
+
+# ----- START: define custom obstruction renderable -----
+
+struct RenderableObstruction
+  pos::VecE2
+  dim::VecE2
+  color::Colorant
+end
+
+function AutoViz.add_renderable!(rendermodel::RenderModel, rect::RenderableObstruction)
+  # add the desired render instructions to the rendermodel
+  add_instruction!(
+      rendermodel, AutoViz.render_rect,
+      (rect.pos.x, rect.pos.y, rect.dim.x, rect.dim.y, rect.color, true),
+      coordinate_system=:scene
+  )
+  return rendermodel
+end
+
+# ----- END: define custom obstruction renderable -----
 
 """Simulate driving scenario with obstruction"""
 function simulate_scene(;NUM_LANES::Int64=3, 
@@ -66,15 +86,23 @@ function simulate_scene(;NUM_LANES::Int64=3,
 
   # array of scene objects (length = nticks)
   scenes = simulate(scene, roadway, models, nticks, timestep)
-  # println(scenes[1][1].state)
   obstruction = RenderableObstruction(OBSTRUCTION_POS, OBSTRUCTION_DIMS, colorant"blue")
 
-  # animation
+  # scenes representation with only each agent's pos/vel: 
+  # (map(scene -> (scene[1].state.veh.posG, scene[2].state.veh.posG), scenes), obstruction, roadway)
+
+  (scenes, obstruction, roadway) # TODO: return more useful representation of this
+end
+
+"""Animate scenes (use: animate_scene(simulate_scene()...))"""
+function animate_scene(scenes::AbstractArray, obstruction::RenderableObstruction, roadway::Roadway)
+  # create text overlay
   textOverlays = [[TextOverlay(
       text=["Vehicle speed: $(get_by_id(scenes[i], 1).state.veh.v)"],
       font_size=13, pos=VecE2(20.0, 50.0), color=colorant"white",
   )] for i in 1:length(scenes)]
 
+  # create neighbor overlay
   neighborOverlays = [[
       NeighborsOverlay(
           scene=scene, roadway=roadway, target_id=1,
@@ -82,34 +110,21 @@ function simulate_scene(;NUM_LANES::Int64=3,
       )
   ] for (i, scene) in enumerate(scenes)]
 
+  # animate
   w = Window()
   viz = @manipulate for step in 1 : length(scenes)
       render([roadway, obstruction, scenes[step], neighborOverlays[step][1], textOverlays[step][1]])
   end
   body!(w, viz)
-
-  (scenes, obstruction) # TODO: return more useful representation of this
 end
 
-# ----- START: define custom obstruction renderable -----
-
-struct RenderableObstruction
-  pos::VecE2
-  dim::VecE2
-  color::Colorant
+"""Check if collision occurred during scene"""
+function check_collision(scene::Scene)::Bool
+  collision_checker(scene[1], scene[2]) # each scene has two agents: car and pedestrian
 end
 
-function AutoViz.add_renderable!(rendermodel::RenderModel, rect::RenderableObstruction)
-  # add the desired render instructions to the rendermodel
-  add_instruction!(
-      rendermodel, AutoViz.render_rect,
-      (rect.pos.x, rect.pos.y, rect.dim.x, rect.dim.y, rect.color, true),
-      coordinate_system=:scene
-  )
-  return rendermodel
-end
-
-# ----- END: define custom obstruction renderable -----
+"""Check if collision occurred during sequence of scenes"""
+check_collision(scenes::AbstractArray)::Bool = foldl(|, map(check_collision, scenes))
 
 # ----- START: define custom action type and driver model for PEDESTRIAN -----
 struct PedestrianAccelLatLong
