@@ -1,0 +1,13 @@
+name = "OmegaExamples"
+uuid = "d2b953eb-d0d4-42fe-a361-416375ef7c30"
+authors = ["Ria Das <riadas@mit.edu>"]
+version = "0.1.0"
+
+[deps]
+AutoViz = "82aa6e0c-a491-5edf-8d4b-c16b98e4ea17"
+AutomotiveDrivingModels = "99497e54-f3d6-53d3-a3a9-fa9315a7f1ba"
+Blink = "ad839575-38b3-5650-b840-f874b8c74a25"
+Interact = "c601a237-2ae4-5e1e-952c-7a85b0c7eef1"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+Reel = "71555da5-176e-5e73-a222-aebc6c6e4f2f"
+Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
