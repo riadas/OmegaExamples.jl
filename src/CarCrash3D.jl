@@ -13,11 +13,11 @@ export render_car_scenes, render_car_scene, render_3D_from_2D
 """Render 3D scenes (multiple) with car, pedestrian, and obstruction in given positions"""
 function render_car_scenes(car_positions::Array{Vec3}, 
                            ped_positions::Array{Vec3};
-                           obs_pos::Vec3=[-0.9, -0.95, -.75],
+                           obs_pos::Vec3=Vec3(-0.9, -0.95, -.75),
                            num_samples::Int64=50,
                            max_bounces::Int64=10,
                            camera_dim::Int64=100,
-                           camera_pos::Vec3=[0.0, 0.0, 15.0],
+                           camera_pos::Vec3=Vec3(0.0, 0.0, 15.0),
                            camera_halfwidth::Float64=0.3,
                            camera_sensorDist::Float64=1.0,
                            file_name::String="car")
@@ -38,13 +38,13 @@ function render_car_scenes(car_positions::Array{Vec3},
 end
 
 """Render 3D scene (single) with car, pedestrian, and obstruction in given positions"""
-function render_car_scene(;car_pos::Vec3=[3.0, -1.3,  0.6], # x ranges from -3 to 3
-                           ped_pos::Vec3=[-3.0, -1.25, -0.9], # z ranges from -0.9 +
-                           obs_pos::Vec3=[-0.9, -0.95, -.75], # stationary
+function render_car_scene(;car_pos::Vec3=Vec3(3.0, -1.3,  0.6), # x ranges from -3 to 3
+                           ped_pos::Vec3=Vec3(-3.0, -1.25, -0.9), # z ranges from -0.9 +
+                           obs_pos::Vec3=Vec3(-0.9, -0.95, -.75), # stationary
                            num_samples::Int64=50,
                            max_bounces::Int64=10,
                            camera_dim::Int64=100,
-                           camera_pos::Vec3=[0.0, 0.0, 15.0],
+                           camera_pos::Vec3=Vec3(0.0, 0.0, 15.0),
                            camera_halfwidth::Float64=0.3,
                            camera_sensorDist::Float64=1.0,
                            file_name::String="car")
@@ -53,25 +53,25 @@ function render_car_scene(;car_pos::Vec3=[3.0, -1.3,  0.6], # x ranges from -3 t
   camera = Camera(camera_dim, camera_pos, camera_halfwidth, camera_sensorDist)
 
   # define scene
-  lightColor     = [1.0, 1.0, 1.0]
-  leftWallColor  = 1.5 .* [0.611, 0.0555, 0.062]
-  carColor       = 1.5 .* [0.611, 0.0555, 0.062]
-  rightWallColor = 1.5 .* [0.117, 0.4125, 0.115]
-  whiteWallColor = [255.0, 239.0, 196.0] / 255.0
-  blockColor     = [200.0, 200.0, 255.0] / 255.0
-  blue           = [0.0,   191.0, 255.0] / 255.0
-  yellow         = [255.0, 255.0, 102.0] / 255.0
+  lightColor     = Vec3([1.0, 1.0, 1.0])
+  leftWallColor  = 1.5 .* Vec3([0.611, 0.0555, 0.062])
+  carColor       = 1.5 .* Vec3([0.611, 0.0555, 0.062])
+  rightWallColor = 1.5 .* Vec3([0.117, 0.4125, 0.115])
+  whiteWallColor = Vec3([255.0, 239.0, 196.0]) / 255.0
+  blockColor     = Vec3([200.0, 200.0, 255.0]) / 255.0
+  blue           = Vec3([0.0,   191.0, 255.0]) / 255.0
+  yellow         = Vec3([255.0, 255.0, 102.0]) / 255.0
 
   car_x, car_y, car_z = car_pos
   ped_x, ped_y, ped_z = ped_pos
   obs_x, obs_y, obs_z = obs_pos
 
-  car = [PassiveObject(Block([     car_x, car_y, car_z], [0.9, 0.7, 0.5] .* 0.5 .* (1.44/1.7), 0), Matte(carColor)), # car body
-        PassiveObject(Block([car_x - 0.65 * (1.44/1.7), car_y, car_z], [0.4, 0.3, 0.5] .* 0.5 .* (1.44/1.7), 0), Matte(carColor)), # hood 
-        PassiveObject(Block([car_x + 0.65 * (1.44/1.7), car_y, car_z], [0.4, 0.3, 0.5] .* 0.5 .* (1.44/1.7), 0), Matte(carColor))] # trunk
+  car = [PassiveObject(Block(Vec3([     car_x, car_y, car_z]), Vec3([0.9, 0.7, 0.5]) .* 0.5 .* (1.44/1.7), 0), Matte(carColor)), # car body
+        PassiveObject(Block(Vec3([car_x - 0.65 * (1.44/1.7), car_y, car_z]), Vec3([0.4, 0.3, 0.5]) .* 0.5 .* (1.44/1.7), 0), Matte(carColor)), # hood 
+        PassiveObject(Block(Vec3([car_x + 0.65 * (1.44/1.7), car_y, car_z]), Vec3([0.4, 0.3, 0.5]) .* 0.5 .* (1.44/1.7), 0), Matte(carColor))] # trunk
        
   # simplified pedestrian: no head or limbs (just body)
-  ped = [PassiveObject(Block([ped_x, ped_y - 0.05, ped_z], [0.3, 0.6, 0.3] .* 0.5, 0), Matte(yellow)),] # body
+  ped = [PassiveObject(Block(Vec3([ped_x, ped_y - 0.05, ped_z]), Vec3([0.3, 0.6, 0.3]) .* 0.5, 0), Matte(yellow)),] # body
         # PassiveObject(Block([ped_x - 0.05, ped_y - 0.6, ped_z], [0.045, 0.3, 0.1], 0), Matte(yellow)), # left leg
         # PassiveObject(Block([ped_x + 0.05, ped_y - 0.6, ped_z], [0.045, 0.3, 0.1], 0), Matte(yellow)),] # right leg
         # PassiveObject(Block([ped_x - 0.15,       ped_y, ped_z], [0.045, 0.2, 0.095], 0), Matte(yellow)), # left arm
@@ -87,9 +87,9 @@ function render_car_scene(;car_pos::Vec3=[3.0, -1.3,  0.6], # x ranges from -3 t
          # PassiveObject(Sphere([ped_x,       ped_y + 0.4, ped_z], 0.125), Matte(yellow))] # head
   =#
 
-  obstruction = [PassiveObject(Block([obs_x, obs_y, obs_z], [1.5, 0.75, 0.75], 0), Matte(blue))]
+  obstruction = [PassiveObject(Block(Vec3([obs_x, obs_y, obs_z]), Vec3([1.5, 0.75, 0.75]), 0), Matte(blue))]
 
-  theScene = theScene = [Light([-1.0, 1.6, 2.5], 1.0, lightColor),
+  theScene = theScene = [Light(Vec3([-1.0, 1.6, 2.5]), 1.0, lightColor),
                          PassiveObject(Wall(yHat, 2.0), Matte(whiteWallColor)),
                          obstruction...,
                          car...,
@@ -115,11 +115,11 @@ function rescale_image(image_matrix::Array{Float64,3})
   map(x -> x == Inf64 ? 255.0 : x, thresholded_image)./255
 end
 
-function render_3D_from_2D(scene::Scene; obs_pos::Vec3=[-0.9, -0.95, -.75],
+function render_3D_from_2D(scene::Scene; obs_pos::Vec3=Vec3([-0.9, -0.95, -.75]),
                                          num_samples::Int64=50,
                                          max_bounces::Int64=10,
                                          camera_dim::Int64=100,
-                                         camera_pos::Vec3=[0.0, 0.0, 15.0],
+                                         camera_pos::Vec3=Vec3([0.0, 0.0, 15.0]),
                                          camera_halfwidth::Float64=0.3,
                                          camera_sensorDist::Float64=1.0,
                                          file_name::String="car")
@@ -135,8 +135,8 @@ function render_3D_from_2D(scene::Scene; obs_pos::Vec3=[-0.9, -0.95, -.75],
   println(string("car_pos_x_3D: ", car_pos_x_3D))
   println(string("ped_pos_z_3D: ", ped_pos_z_3D))
 
-  car_pos_3D = [car_pos_x_3D, -1.3,  0.6]
-  ped_pos_3D = [-3.0, -1.25, ped_pos_z_3D]
+  car_pos_3D = Vec3([car_pos_x_3D, -1.3,  0.6])
+  ped_pos_3D = Vec3([-3.0, -1.25, ped_pos_z_3D])
 
   render_car_scene(car_pos=car_pos_3D, # x ranges from -3 to 3
                    ped_pos=ped_pos_3D, # z ranges from -0.9 +
@@ -150,14 +150,14 @@ function render_3D_from_2D(scene::Scene; obs_pos::Vec3=[-0.9, -0.95, -.75],
                    file_name=file_name)
 end
 
-function render_3D_from_2D(scenes::AbstractArray; obs_pos::Vec3=[-0.9, -0.95, -.75],
-                                                 num_samples::Int64=50,
-                                                 max_bounces::Int64=10,
-                                                 camera_dim::Int64=100,
-                                                 camera_pos::Vec3=[0.0, 0.0, 15.0],
-                                                 camera_halfwidth::Float64=0.3,
-                                                 camera_sensorDist::Float64=1.0,
-                                                 file_name::String="car")
+function render_3D_from_2D(scenes::AbstractArray; obs_pos::Vec3=Vec3([-0.9, -0.95, -.75]),
+                                                  num_samples::Int64=50,
+                                                  max_bounces::Int64=10,
+                                                  camera_dim::Int64=100,
+                                                  camera_pos::Vec3=Vec3([0.0, 0.0, 15.0]),
+                                                  camera_halfwidth::Float64=0.3,
+                                                  camera_sensorDist::Float64=1.0,
+                                                  file_name::String="car")
   num_timesteps = length(scenes)
 
   for i in 1:num_timesteps
@@ -168,7 +168,7 @@ function render_3D_from_2D(scenes::AbstractArray; obs_pos::Vec3=[-0.9, -0.95, -.
                                  camera_pos=camera_pos,
                                  camera_halfwidth=camera_halfwidth,
                                  camera_sensorDist=camera_sensorDist,
-                                 file_name=string(file_name, "_", i, ".", "png"))
+                                 file_name=string(file_name, "_", i))
   end
 end
 

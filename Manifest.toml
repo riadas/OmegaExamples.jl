@@ -975,9 +975,9 @@ uuid = "c84ed2f1-dad5-54f0-aa8e-dbefe2724439"
 version = "0.4.0"
 
 [[RayMarch]]
-deps = ["BenchmarkTools", "Distributions", "GeometryBasics", "ImageIO", "ImageMagick", "Images", "LinearAlgebra", "ProfileView", "QuartzImageIO", "Random", "Reexport", "TestImages", "Zygote"]
-git-tree-sha1 = "49110406c68d377428ac30ab6af08feef4c94dd5"
-repo-rev = "ria-raymarch"
+deps = ["BenchmarkTools", "Distributions", "GeometryBasics", "ImageIO", "ImageMagick", "Images", "LinearAlgebra", "ProfileView", "QuartzImageIO", "Random", "Reexport", "StaticArrays", "TestImages", "Zygote"]
+git-tree-sha1 = "bb66741d109e42274b3a24a0e2aa68803cd02cb8"
+repo-rev = "main"
 repo-url = "https://github.com/zenna/RayMarch.jl"
 uuid = "c7188509-fa97-49bc-9e1d-44621919a6fa"
 version = "0.1.0"
