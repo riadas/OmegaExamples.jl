@@ -2,7 +2,7 @@ module OmegaExamples
 
 using Reexport 
 
-include("CarCrash.jl")
+include("CarCrash/CarCrash.jl")
 @reexport using .CarCrash
 
 include("CarCrash3D.jl")

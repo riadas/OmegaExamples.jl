@@ -126,14 +126,15 @@ function render_3D_from_2D(scene::Scene; obs_pos::Vec3=Vec3([-0.9, -0.95, -.75])
 
   car_pos_x = posg(scene[1].state.veh).x
   ped_pos_y = posg(scene[2].state.veh).y
-  println(string("car_pos_x: ", car_pos_x))
-  println(string("ped_pos_y: ", ped_pos_y))
+
+  # println(string("car_pos_x: ", car_pos_x))
+  # println(string("ped_pos_y: ", ped_pos_y))
 
   car_pos_x_3D = -(car_pos_x - 30.0) * scale_factor + 3.0
   ped_pos_z_3D = ped_pos_y * scale_factor + 0.6
 
-  println(string("car_pos_x_3D: ", car_pos_x_3D))
-  println(string("ped_pos_z_3D: ", ped_pos_z_3D))
+  # println(string("car_pos_x_3D: ", car_pos_x_3D))
+  # println(string("ped_pos_z_3D: ", ped_pos_z_3D))
 
   car_pos_3D = Vec3([car_pos_x_3D, -1.3,  0.6])
   ped_pos_3D = Vec3([-3.0, -1.25, ped_pos_z_3D])
@@ -173,5 +174,18 @@ function render_3D_from_2D(scenes::AbstractArray; obs_pos::Vec3=Vec3([-0.9, -0.9
 end
 
 scale_factor = 6.0/20.0
+
+function fast_params()
+  (car_pos = Vec3(3.0, -1.3,  0.6),
+   ped_pos = Vec3(-3.0, -1.25, -0.9),
+   obs_pos = Vec3(-0.9, -0.95, -.75),
+   num_samples = 5,
+   max_bounces = 3,
+   camera_dim = 100,
+   camera_pos = Vec3([0.0, 0.0, 15.0]),
+   camera_halfwidth = 0.3,
+   camera_sensorDist = 1.0,
+   file_name = "car")
+end
 
 end

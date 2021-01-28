@@ -1,7 +1,6 @@
-module CarCrash
 
-using AutoViz
 using AutomotiveDrivingModels
+using AutoViz
 using Random
 using Interact
 using Reel
@@ -206,5 +205,3 @@ AutomotiveDrivingModels.observe!(model::CautiousCar, scene::Scene{Entity{CustomV
 Base.rand(::AbstractRNG, model::CautiousCar) = model.a
 
 # ----- END: define custom action type and driver model for CAR -----
-
-end
