@@ -174,6 +174,11 @@ function AutomotiveDrivingModels.propagate(veh::Entity{CustomVehicleState,Vehicl
   obstruction_dims = veh.state.obstruction_dims
   accel = veh.state.accel
   decel = veh.state.decel
+  
+  println(string("time: ", time))
+  println(string("front position: ", get_front(veh)))
+  println(string("middle position: ", posg(veh.state.veh)))
+  println(string("rear position: ", get_rear(veh)))
 
   carFrontPos = get_front(veh)
   obstructionTopRightX = obstruction_pos.x + obstruction_dims.x
