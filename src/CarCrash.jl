@@ -1,7 +1,7 @@
 module CarCrash
 
-using AutomotiveDrivingModels
 using AutoViz
+using AutomotiveDrivingModels
 using Random
 using Interact
 using Reel
