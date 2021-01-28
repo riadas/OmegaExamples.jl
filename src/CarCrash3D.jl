@@ -89,7 +89,11 @@ function render_car_scene(;car_pos::Vec3=Vec3(3.0, -1.3,  0.6), # x ranges from 
 
   obstruction = [PassiveObject(Block(Vec3([obs_x, obs_y, obs_z]), Vec3([1.5, 0.75, 0.75]), 0), Matte(blue))]
 
-  theScene = theScene = [Light(Vec3([-1.0, 1.6, 2.5]), 1.0, lightColor),
+  theScene = theScene = [Light(Vec3([-2.5, 0.5, -0.5]), 1.0, lightColor),
+                         Light(Vec3([-2.5, 0.75, -0.2]), 1.0, lightColor),
+                         Light(Vec3([-2.5, 0.75, 1.0]), 1.0, lightColor),
+                         Light(Vec3([-0.75, 1.5, 1.5]), 1.0, lightColor),
+                         Light(Vec3([1.0, 1.6, 2.5]), 1.0, lightColor),
                          PassiveObject(Wall(yHat, 2.0), Matte(whiteWallColor)),
                          obstruction...,
                          car...,
