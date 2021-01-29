@@ -116,7 +116,7 @@ function fast_params()
    obs_pos = Vec3([2.0, -0.5,  -4.0]),
    num_samples = 5,
    max_bounces = 3,
-   camera_dim = 10,
+   camera_dim = 1000,
    camera_pos = Vec3([0.0, 0.0, 10.0]),
    camera_halfwidth = 0.3,
    camera_sensorDist = 1.0,
