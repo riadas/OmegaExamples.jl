@@ -43,13 +43,16 @@ end
 
 # ----- define data
 u0, full_data = parse_data()
-datasize = 500
+u0 = [u0]
+println(u0)
+datasize = 500 # 100
 times, ode_data = full_data[1,:][1:datasize], full_data[2,:][1:datasize]
 tspan = (0.0, maximum(times))
 tsteps = range(tspan[1], tspan[2], length = datasize)
 
 # ----- define Neural ODE architecture
-dudt2 = FastChain((x, p) -> FastDense(1, 50, tanh),
+dudt2 = FastChain((x, p) -> x.^3,
+                            FastDense(1, 50, tanh),
                             FastDense(50, 1))
 prob_neuralode = NeuralODE(dudt2, tspan, Tsit5(), saveat = tsteps)
 

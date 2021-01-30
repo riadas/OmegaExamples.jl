@@ -51,7 +51,8 @@ times_glucose, ode_data_glucose = full_data_glucose[1,:][1:dsize*2], full_data_g
 times_steps, ode_data_steps = full_data_steps[1,:][1:dsize*2], full_data_steps[2,:][1:dsize*2]
 
 times = intersect(times_glucose, times_steps)
-times = times[69:length(times)]
+# times = times[69:length(times)]
+times = times[69:69 + 40 - 1]
 start_time = minimum(times)
 times = map(time -> time - start_time, times)
 
@@ -66,7 +67,8 @@ start_time_idx = findall(time -> time == 0, times)[1]
 u0 = [ode_data_glucose[start_time_idx]; ode_data_steps[start_time_idx]]
 ode_data = Array(transpose(hcat([ode_data_glucose, ode_data_steps]...)))
 
-datasize = 221
+# datasize = 221
+datasize = 40
 tspan = (0.0, maximum(times))
 tsteps = range(tspan[1], tspan[2], length = datasize)
 
@@ -77,8 +79,8 @@ println(size(ode_data))
 
 # ----- define Neural ODE architecture
 dudt2 = FastChain((x, p) -> x.^3,
-                  FastDense(2, 50, tanh),
-                  FastDense(50, 2))
+                            FastDense(2, 25, tanh), # FastDense(2, 50, tanh),
+                            FastDense(25, 2)) # FastDense(2, 50, tanh),
 prob_neuralode = NeuralODE(dudt2, tspan, Tsit5(), saveat = tsteps)
 
 # ----- define loss function for Neural ODE
@@ -133,7 +135,7 @@ idx = findmin(losses)[2]
 prediction = predict_neuralode(samples[idx])
 
 plot!(tsteps,prediction[1,:], color = :black, w = 2, label = "")
-plot!(tsteps,prediction[2,:], color = :black, w = 2, label = "Best fit prediction", ylims = (-2.5, 3.5))
+plot!(tsteps,prediction[2,:], color = :black, w = 2, label = "Best fit prediction")
 # plot!(tsteps,prediction[2,:], color = :black, w = 2, label = "Best fit prediction", ylims = (-2.5, 3.5))
 
 
