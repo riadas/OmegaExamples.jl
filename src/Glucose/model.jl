@@ -1,81 +1,57 @@
-using DiffEqFlux, OrdinaryDiffEq, Flux, Optim, Plots, AdvancedHMC, MCMCChains
-using JLD, StatsPlots
+using OrdinaryDiffEq, Flux, Random
+using DiffEqFlux
 
-include("data.jl")
 
-function run_model(var::String="bolus", bin_size::Int64)
-  u0, ode_data = prepare_data(var, 40)
-  datasize = length(ode_data[1,:])
-  tspan = (0.0, Float64(datasize) - 1)
-  tsteps = range(tspan[1], tspan[2], length = datasize)
-  
-  println("u0")
-  println(size(u0))
-  println("ode_data")
-  println(size(ode_data))
 
-  # ----- define Neural ODE architecture
-  dudt2 = FastChain((x, p) -> x.^3,
-                    FastDense(2, 25, swish), # FastDense(2, 50, tanh),
-                    FastDense(25, 2)) # FastDense(2, 50, tanh),
-  prob_neuralode = NeuralODE(dudt2, tspan, Tsit5(), saveat = tsteps)
+function neural_ode(t, data_dim; saveat = t)
+    f = FastChain(FastDense(data_dim, 64, swish),
+                  FastDense(64, 32, swish),
+                  FastDense(32, data_dim))
 
-  # ----- define loss function for Neural ODE
-  function predict_neuralode(p)
-    Array(prob_neuralode(u0, p))
-  end
-
-  function loss_neuralode(p)
-    pred = predict_neuralode(p)
-    loss = sum(abs2, ode_data .- pred)
-    return loss, pred
-  end
-
-  # ----- define Hamiltonian log density and gradient 
-  l(θ) = -sum(abs2, ode_data .- predict_neuralode(θ)) - sum(θ .* θ)
-
-  function dldθ(θ)
-    x,lambda = Flux.Zygote.pullback(l,θ)
-    grad = first(lambda(1))
-    return x, grad
-  end
-
-  # ----- define step size adaptor function and sampler
-  metric  = DiagEuclideanMetric(length(prob_neuralode.p))
-
-  h = Hamiltonian(metric, l, dldθ)
-
-  integrator = Leapfrog(find_good_stepsize(h, Float64.(prob_neuralode.p)))
-
-  prop = AdvancedHMC.NUTS{MultinomialTS, GeneralisedNoUTurn}(integrator)
-
-  adaptor = StanHMCAdaptor(MassMatrixAdaptor(metric), StepSizeAdaptor(0.45, prop.integrator))
-
-  samples, stats = sample(h, prop, Float64.(prob_neuralode.p), 500, adaptor, 500; progress=true)
-
-  losses = map(x-> x[1],[loss_neuralode(samples[i]) for i in 1:length(samples)])
-
-  (samples, losses)  
+    node = NeuralODE(f, (minimum(t), maximum(t)), Tsit5(),
+                     saveat = saveat, abstol = 1e-9,
+                     reltol = 1e-9)
 end
 
-function plot_model_results(samples, losses)
-  ##################### PLOTS: LOSSES ###############
-  scatter(losses, ylabel = "Loss",  yscale= :log, label = "Architecture1: 500 warmup, 500 sample")
+function train_one_round(node, θ, y, opt, maxiters,
+                         y0 = y[:, 1]; kwargs...)
+    predict(θ) = Array(node(y0, θ))
+    loss(θ) = begin
+        ŷ = predict(θ)
+        Flux.mse(ŷ, y)
+    end
 
-  ################### RETRODICTED PLOTS: TIME SERIES #################
-  pl = scatter(tsteps, ode_data[1,:], color = :red, label = "Data: CGM", xlabel = "t", title = "CGM & $(var)")
-  scatter!(tsteps, ode_data[2,:], color = :blue, label = "Data: $(var)")
-
-  for k in 1:300
-    resol = predict_neuralode(samples[100:end][rand(1:400)])
-    plot!(tsteps,resol[1,:], alpha=0.04, color = :red, label = "")
-    plot!(tsteps,resol[2,:], alpha=0.04, color = :blue, label = "")
-  end
-
-  idx = findmin(losses)[2]
-  prediction = predict_neuralode(samples[idx])
-
-  plot!(tsteps,prediction[1,:], color = :black, w = 2, label = "")
-  plot!(tsteps,prediction[2,:], color = :black, w = 2, label = "")
-  save(pl, "glucose_$(var)_bin_$(string(bin_size)).png")
+    θ = θ == nothing ? node.p : θ
+    res = DiffEqFlux.sciml_train(
+        loss, θ, opt,
+        maxiters = maxiters;
+        kwargs...
+    )
+    return res.minimizer
 end
+
+function train(θ = nothing, maxiters = 150, lr = 1e-2)
+    log_results(θs, losses) =
+        (θ, loss) -> begin
+            push!(θs, copy(θ))
+            push!(losses, loss)
+            false
+        end
+
+    θs, losses = [], []
+    num_obs = 4:4:length(train_t)
+    for k in num_obs
+        node = neural_ode(train_t[1:k], size(y, 1))
+        θ = train_one_round(
+            node, θ, train_y[:, 1:k],
+            ADAMW(lr), maxiters;
+            cb = log_results(θs, losses)
+        )
+    end
+    θs, losses
+end
+
+
+
+Random.seed!(1)
+θs, losses = train();
