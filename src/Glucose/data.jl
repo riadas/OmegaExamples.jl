@@ -3,6 +3,8 @@ using Dates
 using Statistics 
 using Plots
 
+FILE_LOCATION = "../../../OhioT1DM-training/559-ws-training.xml"
+
 function average_over_bins(data::AbstractArray, bin_size::Int64)
   size = min(length(data), bin_size)
   bins = Iterators.partition(data, size) |> collect
@@ -17,7 +19,7 @@ function normalize_binned_data(data::AbstractArray, bin_size::Int64)
   normalize(average_over_bins(data, bin_size))
 end
 
-function prepare_data(var::String, bin_size::Int64; file_location::String="../../../OhioT1DM-training/559-ws-training.xml")
+function prepare_data(var::String, bin_size::Int64; file_location::String=FILE_LOCATION)
   if var == "basis_steps"
     ode_data = prepare_steps_data(file_location=file_location)
   elseif var == "bolus"
@@ -38,7 +40,7 @@ function prepare_data(var::String, bin_size::Int64; file_location::String="../..
   (u0, Array(transpose(hcat([glucose_data, other_data]...))))
 end
 
-function prepare_steps_data(;file_location::String="../../../OhioT1DM-training/559-ws-training.xml")
+function prepare_steps_data(;file_location::String=FILE_LOCATION)
   full_data_glucose = parse_data_from_xml("glucose_level"; file_location=file_location)
   full_data_steps = parse_data_from_xml("basis_steps"; file_location=file_location)
     
@@ -57,7 +59,7 @@ function prepare_steps_data(;file_location::String="../../../OhioT1DM-training/5
   Array(transpose(hcat([ode_data_glucose, ode_data_steps]...)))
 end
 
-function prepare_bolus_data(;file_location::String="../../../OhioT1DM-training/559-ws-training.xml")
+function prepare_bolus_data(;file_location::String=FILE_LOCATION)
   full_data_glucose = parse_data_from_xml("glucose_level"; round_time=true, file_location=file_location)
   full_data_bolus = parse_data_from_xml("bolus"; round_time=true, file_location=file_location)
 
@@ -89,7 +91,7 @@ function prepare_bolus_data(;file_location::String="../../../OhioT1DM-training/5
 
 end
 
-function parse_data_from_xml(data_name::String; round_time::Bool=false, file_location::String="../../../OhioT1DM-training/559-ws-training.xml")
+function parse_data_from_xml(data_name::String; round_time::Bool=false, file_location::String=FILE_LOCATION)
   # xdoc is an instance of XMLDocument, which maintains a tree structure
   xdoc = parse_file(file_location)
 
