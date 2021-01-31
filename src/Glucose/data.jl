@@ -42,8 +42,8 @@ function prepare_steps_data(;file_location::String="../../../OhioT1DM-training/5
   full_data_glucose = parse_data_from_xml("glucose_level"; file_location=file_location)
   full_data_steps = parse_data_from_xml("basis_steps"; file_location=file_location)
     
-  times_glucose, ode_data_glucose = full_data_glucose[1,:][1:1000], full_data_glucose[2,:][1:1000] # 1000 is arbitrary
-  times_steps, ode_data_steps = full_data_steps[1,:][1:1000], full_data_steps[2,:][1:1000] # 1000 is arbitrary
+  times_glucose, ode_data_glucose = full_data_glucose[1,:], full_data_glucose[2,:] # 1000 is arbitrary
+  times_steps, ode_data_steps = full_data_steps[1,:], full_data_steps[2,:] # 1000 is arbitrary
   
   times = intersect(times_glucose, times_steps)
   times = times[69:length(times)]
