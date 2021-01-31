@@ -79,7 +79,7 @@ using Dates
 # --------------------------------------
 
 include("data.jl")
-u0, ode_data = prepare_data("bolus", 20)
+u0, ode_data = prepare_data("bolus", 40)
 datasize = length(ode_data[1,:])
 tspan = (0.0, Float64(datasize) - 1)
 tsteps = range(tspan[1], tspan[2], length = datasize)
@@ -92,9 +92,9 @@ println("ode_data")
 println(size(ode_data))
 
 # ----- define Neural ODE architecture
-dudt2 = FastChain((x, p) -> x.^1,
-                            FastDense(2, 32, tanh), # FastDense(2, 50, tanh),
-                            FastDense(32, 2)) # FastDense(2, 50, tanh),
+dudt2 = FastChain((x, p) -> x.^3,
+                            FastDense(2, 25, swish), # FastDense(2, 50, tanh),
+                            FastDense(25, 2)) # FastDense(2, 50, tanh),
 prob_neuralode = NeuralODE(dudt2, tspan, Tsit5(), saveat = tsteps)
 
 # ----- define loss function for Neural ODE
