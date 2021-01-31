@@ -45,15 +45,15 @@ end
 u0, full_data = parse_data()
 u0 = [u0]
 println(u0)
-datasize = 500 # 100
+datasize = 250 # 500
 times, ode_data = full_data[1,:][1:datasize], full_data[2,:][1:datasize]
 tspan = (0.0, maximum(times))
 tsteps = range(tspan[1], tspan[2], length = datasize)
 
 # ----- define Neural ODE architecture
 dudt2 = FastChain((x, p) -> x.^3,
-                            FastDense(1, 50, tanh),
-                            FastDense(50, 1))
+                            FastDense(1, 25, tanh),
+                            FastDense(25, 1))
 prob_neuralode = NeuralODE(dudt2, tspan, Tsit5(), saveat = tsteps)
 
 # ----- define loss function for Neural ODE
@@ -92,20 +92,20 @@ samples, stats = sample(h, prop, Float64.(prob_neuralode.p), 500, adaptor, 500; 
 losses = map(x-> x[1],[loss_neuralode(samples[i]) for i in 1:length(samples)])
 
 ##################### PLOTS: LOSSES ###############
-scatter(losses, ylabel = "Loss",  yscale= :log, label = "Architecture1: 500 warmup, 500 sample")
+pl = scatter(losses, ylabel = "Loss",  yscale= :log, label = "Architecture1: 500 warmup, 500 sample")
 
 ################### RETRODICTED PLOTS: TIME SERIES #################
-pl = scatter(tsteps, ode_data[1], color = :red, label = "CGM data", xlabel = "t", title = "CGM Neural ODE")
+pl = scatter(tsteps, ode_data, color = :red, label = "CGM data", xlabel = "t", title = "CGM Neural ODE")
 
 for k in 1:300
     resol = predict_neuralode(samples[100:end][rand(1:400)])
-    plot!(tsteps,resol[1], alpha=0.04, color = :red, label = "")
+    plot!(tsteps, transpose(resol), alpha=0.04, color = :red, label = "")
 end
 
 idx = findmin(losses)[2]
 prediction = predict_neuralode(samples[idx])
 
-# plot!(tsteps, prediction[1,:], color = :black, w = 2, label = "")
+plot!(tsteps, transpose(prediction), color = :black, w = 2, label = "")
 # plot!(tsteps, prediction[2,:], color = :black, w = 2, label = "Best fit prediction", ylims = (-2.5, 3.5))
 
 # ################### RETRODICTED PLOTS: TIME SERIES #################

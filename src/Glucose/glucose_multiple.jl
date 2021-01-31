@@ -13,16 +13,25 @@ function parse_data(;file_location::String="../../../OhioT1DM-training/559-ws-tr
 
   # get the root element
   xroot = root(xdoc)  # an instance of XMLElement
+
   data_element = find_element(xroot, data_name)
 
   parsed_data = [[],[]]
 
   for event in child_nodes(data_element)
     if is_elementnode(event)
+      # println(event)
        # time in minutes
-      push!(parsed_data[1], DateTime(attribute(XMLElement(event), "ts"), "dd-mm-yyyy HH:MM:SS").instant.periods.value/(1000.0 * 60))
-      # value
-      push!(parsed_data[2], parse(Float64, attribute(XMLElement(event), "value")))
+      push!(parsed_data[1], ceil(DateTime(attribute(XMLElement(event), "ts"), "dd-mm-yyyy HH:MM:SS"), Dates.Minute(1)).instant.periods.value/(1000.0 * 60))
+      if (data_name in ["glucose_level", "basis_steps"])
+        push!(parsed_data[2], parse(Float64, attribute(XMLElement(event), "value")))
+      elseif (data_name == "meal")
+        push!(parsed_data[2], parse(Float64, attribute(XMLElement(event), "carbs")))
+      elseif (data_name == "bolus")
+        println("hello")
+        println(attribute(XMLElement(event), "ts_begin"))
+        println(attribute(XMLElement(event), "ts_end"))
+      end
     end
   end
 
@@ -43,16 +52,16 @@ end
 
 # ----- define data
 _, full_data_glucose = parse_data()
-_, full_data_steps = parse_data(data_name="basis_steps")
+_, full_data_steps = parse_data(data_name="basis_steps") # basis_steps
 
 dsize = 500
 
-times_glucose, ode_data_glucose = full_data_glucose[1,:][1:dsize*2], full_data_glucose[2,:][1:dsize*2]
-times_steps, ode_data_steps = full_data_steps[1,:][1:dsize*2], full_data_steps[2,:][1:dsize*2]
+times_glucose, ode_data_glucose = full_data_glucose[1,:], full_data_glucose[2,:]
+times_steps, ode_data_steps = full_data_steps[1,:], full_data_steps[2,:]
 
 times = intersect(times_glucose, times_steps)
-# times = times[69:length(times)]
-times = times[69:69 + 40 - 1]
+times = times[69:length(times)]
+# times = times[69:69 + 40 - 1]
 start_time = minimum(times)
 times = map(time -> time - start_time, times)
 
@@ -60,15 +69,15 @@ println(string("start_time: ", start_time))
 println(string("length(times): ", length(times)))
 println(times)
 
-ode_data_glucose = map(i -> ode_data_glucose[i], findall(time -> (time - start_time) in times, times_glucose[1:1000]))
-ode_data_steps = map(i -> ode_data_steps[i], findall(time -> (time - start_time) in times, times_steps[1:1000]))
+ode_data_glucose = map(i -> ode_data_glucose[i], findall(time -> (time - start_time) in times, times_glucose[1:min(dsize*2, length(full_data_glucose[1,:]))]))
+ode_data_steps = map(i -> ode_data_steps[i], findall(time -> (time - start_time) in times, times_steps[1:min(dsize*2, length(full_data_glucose[1,:]))]))
 
 start_time_idx = findall(time -> time == 0, times)[1]
 u0 = [ode_data_glucose[start_time_idx]; ode_data_steps[start_time_idx]]
 ode_data = Array(transpose(hcat([ode_data_glucose, ode_data_steps]...)))
 
-# datasize = 221
-datasize = 40
+datasize = 221
+# datasize = 40
 tspan = (0.0, maximum(times))
 tsteps = range(tspan[1], tspan[2], length = datasize)
 
