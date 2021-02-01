@@ -1,4 +1,9 @@
-using OmegaCore, Distributions
+# using OmegaCore
+# using Distributions
+
+import Omega
+using Omega.Prim: Normal, ~
+const randsample = rand
 
 export prob, carjoint
 
@@ -7,7 +12,8 @@ const accel = 1 ~ Normal(μspeed, 1)
 const car_init_vel = 2 ~ Normal(10.0, 2.0)
 # const CAR_INIT_VEL =10.0
 
-function model(ω) 
+"Raandom variable over simulations"
+function simrv(ω) 
   decel = 9.0
   timestep = 0.1
   simulate_scene(; ACCEL = accel(ω),
@@ -16,7 +22,7 @@ function model(ω)
                    timestep = timestep)
 end
 
-crashed(ω) = check_collision(model(ω)[1])
+crashed(ω) = check_collision(simrv(ω)[1])
 
 prob(x; n = 1000) = mean(randsample(x, n))
 
@@ -26,4 +32,4 @@ function run_cf()
   had their acceleration been 1.0 ", prob(cf_crash))
 end
 
-carjoint = @joint(accel, car_init_vel, crashed, sim)
+# carjoint = @joint(accel, car_init_vel, crashed, sim)
