@@ -1,7 +1,3 @@
-include("data.jl")
-include("model.jl")
-include("model_bayes.jl")
-
 # ----- START: OPTIMIZATION TEST FUNCTIONS ----- #
 
 # glucose, steps, bolus, meals

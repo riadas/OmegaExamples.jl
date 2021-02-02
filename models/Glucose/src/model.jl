@@ -2,8 +2,6 @@ using OrdinaryDiffEq, Flux, Random
 using DiffEqFlux
 using BSON: @save
 
-include("data.jl")
-
 function model(ode_data::AbstractArray, batch_size::Int=4, maxiters::Int=150, lr::Float64=0.01)
   # u0, ode_data = prepare_data("basis_steps", bin_size)
   u0 = ode_data[:, 1]
@@ -177,7 +175,7 @@ function model_exo(non_exo_data::AbstractArray, exo_data::AbstractArray, batch_s
       for k in num_obs
         println(k)
         if log_dir != ""
-          @save BSON joinpath(log_dir, "model$(k).bson") node
+        #   @save BSON joinpath(log_dir, "model$(k).bson") node
         end
         node = neural_ode(train_t[1:k], input_data_dim, output_data_dim)
         θ = train_one_round(

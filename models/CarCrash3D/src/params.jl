@@ -2,8 +2,6 @@
 using RayMarch
 using RayMarch: xHat, yHat, zHat, Light, PassiveObject, Wall, Matte, Block, Sphere, Mirror, Params, Camera, takePicture
 using Images 
-using BenchmarkTools
-
 using AutomotiveDrivingModels
 using ..CarCrash
 

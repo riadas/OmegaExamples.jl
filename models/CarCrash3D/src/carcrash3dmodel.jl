@@ -1,15 +1,15 @@
 using Lens
-import OmegaCore
+# import OmegaCore
 import Omega
 using ..CarCrash: simrv
 using RayMarch
 using ImageView
 using JLD2
 import FileIO
-import ..OmegaExamples
+# import ..OmegaExamples
 import Omega: ==ₛ, ==ᵣ, SSMH, default_cbs, SSMHLoop
 
-datadir = joinpath(dirname(pathof(OmegaExamples)), "CarCrash3D")
+datadir = joinpath(dirname(pathof(CarCrash3D)), "..", "data")
 
 export camera_footage
 const simrv2 = ~ simrv
