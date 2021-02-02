@@ -1,9 +1,9 @@
-
+using CarCrash
 using RayMarch
 using RayMarch: xHat, yHat, zHat, Light, PassiveObject, Wall, Matte, Block, Sphere, Mirror, Params, Camera, takePicture
 using Images 
 using AutomotiveDrivingModels
-using ..CarCrash
+using Statistics
 
 export render_car_scenes, render_car_scene, render_3D_from_2D
 
