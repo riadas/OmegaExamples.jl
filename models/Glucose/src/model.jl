@@ -175,7 +175,7 @@ function model_exo(non_exo_data::AbstractArray, exo_data::AbstractArray, batch_s
       for k in num_obs
         println(k)
         if log_dir != ""
-        #   @save BSON joinpath(log_dir, "model$(k).bson") node
+          bson(joinpath(log_dir, "model$(k).bson"), node)
         end
         node = neural_ode(train_t[1:k], input_data_dim, output_data_dim)
         θ = train_one_round(

@@ -39,7 +39,7 @@ function allparams()
 end
 
 "Run with julia -L hyper.jl -E 'hyper(;)' -- --queue"
-function hyper(; params = Params(), n = 1000)
+function hyper(; params = Params(), n = 10)
   params_ = allparams()
   paramsamples = rand(params_, n)
   display.(paramsamples)
