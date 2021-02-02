@@ -1,7 +1,6 @@
 using DiffEqFlux, OrdinaryDiffEq, Flux, Optim, Plots, AdvancedHMC, MCMCChains
 using JLD, StatsPlots
 
-include("data.jl")
 
 function model_bayes(ode_data::AbstractArray)
   u0 = ode_data[:, 1]

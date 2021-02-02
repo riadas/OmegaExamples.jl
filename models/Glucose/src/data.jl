@@ -3,7 +3,10 @@ using Dates
 using Statistics 
 using Plots
 
-FILE_LOCATION = "../../../OhioT1DM-training/559-ws-training.xml"
+# FILE_LOCATION = "../../../OhioT1DM-training/559-ws-training.xml"
+
+const datadir = joinpath(dirname(pathof(Glucose)), "..", "data", "OhioT1DM-training")
+const ohio5559 = joinpath(datadir, "559-ws-training.xml")
 
 function average_over_bins(data::AbstractArray, bin_size::Int64)
   size = min(length(data), bin_size)
@@ -19,7 +22,7 @@ function normalize_binned_data(data::AbstractArray, bin_size::Int64)
   normalize(average_over_bins(data, bin_size))
 end
 
-function prepare_data(var::String, bin_size::Int64; file_location::String=FILE_LOCATION)
+function prepare_data(var::String, bin_size::Int64; file_location = ohio5559)
   if var == "basis_steps"
     ode_data = prepare_steps_data(file_location=file_location)
   elseif var == "bolus"
@@ -40,7 +43,7 @@ function prepare_data(var::String, bin_size::Int64; file_location::String=FILE_L
   (u0, Array(transpose(hcat([glucose_data, other_data]...))))
 end
 
-function prepare_steps_data(;file_location::String=FILE_LOCATION)
+function prepare_steps_data(;file_location = ohio5559)
   full_data_glucose = parse_data_from_xml("glucose_level"; round_time=true, file_location=file_location)
   full_data_steps = parse_data_from_xml("basis_steps"; round_time=true, file_location=file_location)
     
@@ -58,7 +61,7 @@ function prepare_steps_data(;file_location::String=FILE_LOCATION)
   Array(transpose(hcat([ode_data_glucose, ode_data_steps]...)))
 end
 
-function prepare_all_data(bin_size::Int64;file_location::String=FILE_LOCATION)
+function prepare_all_data(bin_size::Int64;file_location = ohio5559)
   full_data_glucose = parse_data_from_xml("glucose_level"; round_time=true, file_location=file_location)
   full_data_bolus = parse_data_from_xml("bolus"; round_time=true, file_location=file_location)
   full_data_steps = parse_data_from_xml("basis_steps"; round_time=true, file_location=file_location)
@@ -96,7 +99,7 @@ function prepare_all_data(bin_size::Int64;file_location::String=FILE_LOCATION)
   u0, ode_data
 end
 
-function prepare_all_data_meals_hypo(bin_size::Int64;file_location::String=FILE_LOCATION, hypo_id::Int=1)
+function prepare_all_data_meals_hypo(bin_size::Int64;file_location = ohio5559, hypo_id::Int=1)
   full_data_glucose = parse_data_from_xml("glucose_level"; round_time=true, file_location=file_location)
   full_data_bolus = parse_data_from_xml("bolus"; round_time=true, file_location=file_location)
   full_data_steps = parse_data_from_xml("basis_steps"; round_time=true, file_location=file_location)
@@ -156,7 +159,7 @@ function prepare_all_data_meals_hypo(bin_size::Int64;file_location::String=FILE_
   u0, ode_data
 end
 
-function prepare_bolus_data(;file_location::String=FILE_LOCATION)
+function prepare_bolus_data(;file_location = ohio5559)
   full_data_glucose = parse_data_from_xml("glucose_level"; round_time=true, file_location=file_location)
   full_data_bolus = parse_data_from_xml("bolus"; round_time=true, file_location=file_location)
 
@@ -188,7 +191,7 @@ function prepare_bolus_data(;file_location::String=FILE_LOCATION)
 
 end
 
-function sorted_glucose_steps_segments(;file_location=FILE_LOCATION)
+function sorted_glucose_steps_segments(;file_location = ohio5559)
   full_data_glucose = parse_data_from_xml("glucose_level"; round_time=true, file_location=file_location)
   full_data_bolus = parse_data_from_xml("bolus"; round_time=true, file_location=file_location)
   full_data_steps = parse_data_from_xml("basis_steps"; round_time=true, file_location=file_location)
@@ -216,7 +219,7 @@ function sorted_glucose_steps_segments(;file_location=FILE_LOCATION)
   reverse(sort(segments, by=length))
 end
 
-function parse_data_from_xml(data_name::String; round_time::Bool=false, file_location::String=FILE_LOCATION)
+function parse_data_from_xml(data_name::String; round_time::Bool=false, file_location = ohio5559)
   # xdoc is an instance of XMLDocument, which maintains a tree structure
   xdoc = parse_file(file_location)
 
