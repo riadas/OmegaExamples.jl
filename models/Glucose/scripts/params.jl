@@ -17,11 +17,11 @@ end
 
 "Optimization Parameters"
 function optparams()
-  Params((binsize = uniform([1, 5, 10, 15]),
-          batchsize = uniform([6, 8, 10, 12, 15]),
-          maxiters = uniform([150:100:1050...]),
-          lr = uniform([0.001, 0.005, 0.01, 0.05, 0.1]),
-          hypoid = uniform([1,2,3])))
+  Params((binsize = uniform([10]), # 1, 5, 10
+          batchsize = uniform([10]), # 6, 8, 10, 12, 15
+          maxiters = uniform([300]), # [150:150:1050...]
+          lr = uniform([0.01]), # 0.001, 0.005, 0.01, 0.05, 0.1
+          hypoid = uniform([1,2,3]))) # 1,2,3
 end
 
 function train(params)
@@ -38,13 +38,8 @@ function allparams()
   merge(φ, runparams(), optparams()) # netparams()
 end
 
-<<<<<<< HEAD
-"Run with julia -L hyper.jl -E 'hyper(;)' -- --queue"
-function hyper(; params = Params(), n = 10)
-=======
 "Run with julia -L params.jl -E 'hyper(;)' -- --queue"
 function hyper(; params = Params(), n = 2)
->>>>>>> 7ce5d19003ca0eeb803fc4e6d94a6cfba5e63151
   params_ = allparams()
   paramsamples = rand(params_, n)
   display.(paramsamples)

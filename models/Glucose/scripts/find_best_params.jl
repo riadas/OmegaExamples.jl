@@ -10,20 +10,22 @@ function plot_best_model()
   Core.eval(Main, :(import NNlib))
 
   # data_directory = "/Users/riadas/Documents/urop/runs/odeoptim_firsttry"
-  data_directory = "/scratch/riadas/runs/odeoptim_firsttry/rn0Gj1r_2021-02-02T09:20:14.067_sketch3"
+  data_directory = "/scratch/riadas/runs/odeoptim_firsttry/"
   folder_names = readdir(data_directory)
   println(folder_names)
   output_dictionaries = []
   for folder in folder_names
     println("folder name")
     println(readdir(joinpath(data_directory, folder)))
-    if "model.json" in readdir(joinpath(data_directory, folder)) # if run has finished
+    if "model.bson" in readdir(joinpath(data_directory, folder)) # if run has finished
+      println("hello")
       d = BSON.load(joinpath(data_directory, folder, "model.bson"))
   
       id = split(folder, "_")[1]
       params = BSON.load(joinpath(data_directory, folder, "$(id).bson"))
       d[:hypoid] = params[:param][:hypoid]
       d[:binsize] = params[:param][:binsize]
+      d[:batchsize] = params[:param][:batchsize]
   
       push!(output_dictionaries, d)
   
@@ -40,11 +42,12 @@ function plot_best_model()
   y0 = optimal_dict[:y0]
   hypoid = optimal_dict[:hypoid]
   binsize = optimal_dict[:binsize]
-  
+  batchsize = optimal_dict[:batchsize]
+
   # plot
   # original data
   _, ode_data = prepare_all_data_meals_hypo(binsize, hypo_id=hypoid)
-  tsteps = (0.0, 1.0, length=size(ode_data[1,:]))
+  tsteps = range(0.0, 1.0, length=size(ode_data[1,:]))
   
   pl = plot(tsteps, ode_data[1,:], color = :red, label = "Data: CGM", xlabel = "t", title = "CGM, Steps, Bolus, Meals")
   plot!(tsteps, ode_data[2,:], color = :blue, label = "Data: Steps")
@@ -52,5 +55,5 @@ function plot_best_model()
   plot!(tsteps, ode_data[4,:], color = :purple, label = "Data: Meals")
   plot!(tsteps,best_pred[1,:], alpha=0.3, color = :red, label = "CGM")
   plot!(tsteps,best_pred[2,:], alpha=0.3, color = :blue, label = "Steps")
-  pl
+  pl, node, theta, loss, best_pred, y0, hypoid, binsize, batchsize
 end
