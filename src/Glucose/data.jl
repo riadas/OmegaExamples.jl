@@ -96,7 +96,7 @@ function prepare_all_data(bin_size::Int64;file_location::String=FILE_LOCATION)
   u0, ode_data
 end
 
-function prepare_all_data_meals_hypo(bin_size::Int64;file_location::String=FILE_LOCATION)
+function prepare_all_data_meals_hypo(bin_size::Int64;file_location::String=FILE_LOCATION, hypo_id::Int=1)
   full_data_glucose = parse_data_from_xml("glucose_level"; round_time=true, file_location=file_location)
   full_data_bolus = parse_data_from_xml("bolus"; round_time=true, file_location=file_location)
   full_data_steps = parse_data_from_xml("basis_steps"; round_time=true, file_location=file_location)
@@ -113,7 +113,7 @@ function prepare_all_data_meals_hypo(bin_size::Int64;file_location::String=FILE_
   intersections = map(x -> (length(intersect(x, times_bolus)), length(intersect(x, times_meals)), length(intersect(x, times_hypoevents))), sorted_segments)
   at_least_one_hypoevent_indices = findall(x -> x[3] != 0, intersections)
 
-  times = sorted_segments[at_least_one_hypoevent_indices[3]]
+  times = sorted_segments[at_least_one_hypoevent_indices[hypo_id]]
 
   start_time = minimum(times)
   times = map(time -> time - start_time, times)

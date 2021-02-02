@@ -30,7 +30,7 @@ function model_bayes(ode_data::AbstractArray)
   l(θ) = -sum(abs2, ode_data .- predict_neuralode(θ)) - sum(θ .* θ)
 
   function dldθ(θ)
-    x,lambda = Flux.Zygote.pullback(l,θ)
+    x,lambda = Flux.Zygote.pullback(l, θ)
     grad = first(lambda(1))
     return x, grad
   end
@@ -54,8 +54,8 @@ function model_bayes(ode_data::AbstractArray)
 end
 
 function model_bayes_exo(non_exo_data::AbstractArray, exo_data::AbstractArray)
-  u0 = non_exo_data[:, 1]
-  datasize = length(ode_data[1,:])
+  u0 = vcat(non_exo_data[:, 1], exo_data[:, 1])
+  datasize = length(non_exo_data[1,:])
   tspan = (0.0, Float64(datasize) - 1)
   tsteps = range(tspan[1], tspan[2], length = datasize)
 
@@ -79,12 +79,12 @@ function model_bayes_exo(non_exo_data::AbstractArray, exo_data::AbstractArray)
 
   function loss_neuralode(p)
     pred = predict_neuralode(p)
-    loss = sum(abs2, ode_data .- pred)
+    loss = sum(abs2, non_exo_data .- pred)
     return loss, pred
   end
 
   # ----- define Hamiltonian log density and gradient 
-  l(θ) = -sum(abs2, ode_data .- predict_neuralode(θ)) - sum(θ .* θ)
+  l(θ) = -sum(abs2, non_exo_data .- predict_neuralode(θ)) - sum(θ .* θ)
 
   function dldθ(θ)
     x, lambda = Flux.Zygote.pullback(l,θ)
