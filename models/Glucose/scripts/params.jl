@@ -1,6 +1,6 @@
 import Glucose
 using Glucose: optim_all_vars_exo
-using SuParameters: Params
+using SuParameters
 using RunTools
 using Omega: normal, uniform, ciid
 
@@ -38,10 +38,15 @@ function allparams()
   merge(φ, runparams(), optparams()) # netparams()
 end
 
-"Run with julia -L hyper.jl -E 'hyper(;)' -- --queue"
-function hyper(; params = Params(), n = 1000)
+"Run with julia -L params.jl -E 'hyper(;)' -- --queue"
+function hyper(; params = Params(), n = 2)
   params_ = allparams()
   paramsamples = rand(params_, n)
   display.(paramsamples)
   control(train, paramsamples)
+end
+
+function testrun()
+  params_ = allparams()
+  train(rand(params_))
 end
