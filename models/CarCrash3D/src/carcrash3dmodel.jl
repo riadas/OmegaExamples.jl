@@ -1,7 +1,7 @@
 using Lens
 # import OmegaCore
 import Omega
-using ..CarCrash: simrv
+using ..CarCrash: simrv, crashed
 using RayMarch
 using ImageView
 using JLD2
@@ -10,6 +10,8 @@ import FileIO
 import Omega: ==ₛ, ==ᵣ, SSMH, default_cbs, SSMHLoop
 
 datadir = joinpath(dirname(pathof(CarCrash3D)), "..", "data")
+image_30_30_4 = joinpath(datadir, "image_30_30_4.jld2")
+image_30_30_20_1 = joinpath(datadir, "image_30_30_20_1.jld2")
 
 export camera_footage
 const simrv2 = ~ simrv
@@ -25,7 +27,7 @@ end
 Omega.d(x::Image, y::Image) = loss(x.x, y.x)
 
 "rv over images generated at times `t`"
-function camera_footage(ω; t = 4)
+function camera_footage(ω; t = 10)
   sim = simrv2(ω)
   # Render the scenes
   i = render_3D_from_2D(sim[1][t]; save = false,
@@ -35,11 +37,17 @@ function camera_footage(ω; t = 4)
   Image(i)                             
 end
 
+const wascrash = ~crashed
+
 imshow_footage(ω) = imshow(imgview(camera_footage(ω).x))
 
-function query(; datapath = joinpath(datadir, "image_30_30_4.jld2"),
+function load_data(; key = "res", datapath = image_30_30_20_1)
+  data = FileIO.load(datapath)[key]
+end
+
+function query(; datapath = image_30_30_20_1,
                  key = "res",
-                 n = 10,
+                 n = 100,
                  kwargs...)
   cam = ~ camera_footage
   data = FileIO.load(datapath)[key]
