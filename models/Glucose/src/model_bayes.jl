@@ -1,23 +1,17 @@
 using DiffEqFlux, OrdinaryDiffEq, Flux, Optim, Plots, AdvancedHMC, MCMCChains
 using JLD, StatsPlots
 
-include("data.jl")
 
-function run_model(var::String, bin_size::Int64)
-  u0, ode_data = prepare_data(var, bin_size)
+function model_bayes(ode_data::AbstractArray)
+  u0 = ode_data[:, 1]
   datasize = length(ode_data[1,:])
   tspan = (0.0, Float64(datasize) - 1)
   tsteps = range(tspan[1], tspan[2], length = datasize)
-  
-  println("u0")
-  println(size(u0))
-  println("ode_data")
-  println(size(ode_data))
 
   # ----- define Neural ODE architecture
   dudt2 = FastChain((x, p) -> x.^3,
-                    FastDense(2, 25, swish), # FastDense(2, 50, tanh),
-                    FastDense(25, 2)) # FastDense(2, 50, tanh),
+      FastDense(2, 25, swish), # FastDense(2, 50, tanh),
+      FastDense(25, 2)) # FastDense(2, 50, tanh),
   prob_neuralode = NeuralODE(dudt2, tspan, Tsit5(), saveat = tsteps)
 
   # ----- define loss function for Neural ODE
@@ -35,7 +29,7 @@ function run_model(var::String, bin_size::Int64)
   l(θ) = -sum(abs2, ode_data .- predict_neuralode(θ)) - sum(θ .* θ)
 
   function dldθ(θ)
-    x,lambda = Flux.Zygote.pullback(l,θ)
+    x,lambda = Flux.Zygote.pullback(l, θ)
     grad = first(lambda(1))
     return x, grad
   end
@@ -55,25 +49,27 @@ function run_model(var::String, bin_size::Int64)
 
   losses = map(x-> x[1],[loss_neuralode(samples[i]) for i in 1:length(samples)])
 
-  (samples, losses)  
+  (samples, losses)
 end
 
-function run_model(bin_size::Int64)
-  u0, ode_data = prepare_all_data(var, bin_size)
-  datasize = length(ode_data[1,:])
+function model_bayes_exo(non_exo_data::AbstractArray, exo_data::AbstractArray)
+  u0 = vcat(non_exo_data[:, 1], exo_data[:, 1])
+  datasize = length(non_exo_data[1,:])
   tspan = (0.0, Float64(datasize) - 1)
   tsteps = range(tspan[1], tspan[2], length = datasize)
-  
-  println("u0")
-  println(size(u0))
-  println("ode_data")
-  println(size(ode_data))
+
+  input_data_dim = size(non_exo_data, 1) + size(exo_data, 1)
+  output_data_dim = size(non_exo_data, 1)
 
   # ----- define Neural ODE architecture
-  dudt2 = FastChain((x, p) -> x.^3,
-                    FastDense(3, 25, swish), # FastDense(2, 50, tanh),
-                    FastDense(25, 3)) # FastDense(2, 50, tanh),
-  prob_neuralode = NeuralODE(dudt2, tspan, Tsit5(), saveat = tsteps)
+  dudt = FastChain((x, p) -> x.^3,
+  FastDense(input_data_dim, 25, swish), # FastDense(2, 50, tanh),
+  FastDense(25, output_data_dim)) # FastDense(2, 50, tanh),
+
+  function dudt_exo(u, p) 
+    dudt4(vcat(u[:, 1], exo_data[:, 1]), p)
+  end
+  prob_neuralode = NeuralODE(dudt_exo, tspan, Tsit5(), saveat = tsteps)
 
   # ----- define loss function for Neural ODE
   function predict_neuralode(p)
@@ -82,21 +78,21 @@ function run_model(bin_size::Int64)
 
   function loss_neuralode(p)
     pred = predict_neuralode(p)
-    loss = sum(abs2, ode_data .- pred)
+    loss = sum(abs2, non_exo_data .- pred)
     return loss, pred
   end
 
   # ----- define Hamiltonian log density and gradient 
-  l(θ) = -sum(abs2, ode_data .- predict_neuralode(θ)) - sum(θ .* θ)
+  l(θ) = -sum(abs2, non_exo_data .- predict_neuralode(θ)) - sum(θ .* θ)
 
   function dldθ(θ)
-    x,lambda = Flux.Zygote.pullback(l,θ)
+    x, lambda = Flux.Zygote.pullback(l,θ)
     grad = first(lambda(1))
     return x, grad
   end
 
   # ----- define step size adaptor function and sampler
-  metric  = DiagEuclideanMetric(length(prob_neuralode.p))
+  metric = DiagEuclideanMetric(length(prob_neuralode.p))
 
   h = Hamiltonian(metric, l, dldθ)
 
@@ -110,7 +106,7 @@ function run_model(bin_size::Int64)
 
   losses = map(x-> x[1],[loss_neuralode(samples[i]) for i in 1:length(samples)])
 
-  (samples, losses)  
+  (samples, losses)
 end
 
 function plot_model_results(samples, losses, var::String)
@@ -158,4 +154,3 @@ function plot_model_results(samples, losses)
   plot!(tsteps,prediction[2,:], color = :black, w = 2, label = "")
   savefig(pl, "glucose_$(var)_bin_$(string(bin_size)).png")
 end
-
