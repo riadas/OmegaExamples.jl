@@ -7,7 +7,7 @@ function model_bayes(ode_data::AbstractArray)
   u0 = ode_data[:, 1]
   datasize = length(ode_data[1,:])
   tspan = (0.0, Float64(datasize) - 1)
-  tsteps = range(tspan[1], tspan[2], length = datasize)
+  tsteps = range(0.0, 1.0, length = datasize) # range(tspan[1], tspan[2], length = datasize)
 
   # ----- define Neural ODE architecture
   dudt2 = FastChain((x, p) -> x.^3,
@@ -57,7 +57,7 @@ function model_bayes_exo(non_exo_data::AbstractArray, exo_data::AbstractArray)
   u0 = vcat(non_exo_data[:, 1], exo_data[:, 1])
   datasize = length(non_exo_data[1,:])
   tspan = (0.0, Float64(datasize) - 1)
-  tsteps = range(tspan[1], tspan[2], length = datasize)
+  tsteps = range(0.0, 1.0, length = datasize) # range(tspan[1], tspan[2], length = datasize)
 
   input_data_dim = size(non_exo_data, 1) + size(exo_data, 1)
   output_data_dim = size(non_exo_data, 1)
@@ -68,7 +68,7 @@ function model_bayes_exo(non_exo_data::AbstractArray, exo_data::AbstractArray)
   FastDense(25, output_data_dim)) # FastDense(2, 50, tanh),
 
   function dudt_exo(u, p) 
-    dudt4(vcat(u[:, 1], exo_data[:, 1]), p)
+    dudt(vcat(u[:, 1], exo_data[:, 1]), p)
   end
   prob_neuralode = NeuralODE(dudt_exo, tspan, Tsit5(), saveat = tsteps)
 

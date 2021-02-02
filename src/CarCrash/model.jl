@@ -192,6 +192,7 @@ function AutomotiveDrivingModels.propagate(veh::Entity{CustomVehicleState,Vehicl
     end 
   else # pedestrian is not visible/not in vehicle's lane
     # TODO: approach desired speed 
+    # println(veh.state.veh.v) 
     vehicleState = propagate(Entity(veh.state.veh, vehdef, veh.id), LatLonAccel(0.0, accel), roadway, Δt)
   end
   return CustomVehicleState(vehicleState, veh.state.time + 1, ped_init_pos, ped_vel, obstruction_pos, obstruction_dims, accel, decel)
