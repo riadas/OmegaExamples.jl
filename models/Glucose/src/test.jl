@@ -5,10 +5,10 @@ using JLD, StatsPlots
 
 # ----- START: OPTIMIZATION TEST FUNCTIONS ----- #
 # glucose, steps, bolus, meals
-function optim_all_vars_no_exo(bin_size::Int64, batch_size::Int=4, maxiters::Int=150, lr::Float64=0.01; hypo_id::Int64=1)
+function optim_all_vars_no_exo(bin_size::Int64, batch_size::Int=4, maxiters::Int=150, lr::Float64=0.01; hypo_id::Int64=1, log_dir="")
   u0, ode_data = prepare_all_data_meals_hypo(bin_size, hypo_id=hypo_id)
-  samples, losses, best_pred = model(ode_data, batch_size, maxiters, lr)
-  samples, losses, best_pred
+  model(ode_data, batch_size, maxiters, lr, log_dir=log_dir)
+  
 end
 
 # glucose, steps, bolus 

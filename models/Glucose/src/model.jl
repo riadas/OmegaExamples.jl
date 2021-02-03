@@ -2,7 +2,7 @@ using OrdinaryDiffEq, Flux, Random
 using DiffEqFlux
 using BSON: @save, bson
 
-function model(ode_data::AbstractArray, batch_size::Int=4, maxiters::Int=150, lr::Float64=0.01)
+function model(ode_data::AbstractArray, batch_size::Int=4, maxiters::Int=150, lr::Float64=0.01; log_dir="")
   # u0, ode_data = prepare_data("basis_steps", bin_size)
   u0 = ode_data[:, 1]
   data_dim = length(u0)
@@ -55,34 +55,51 @@ function model(ode_data::AbstractArray, batch_size::Int=4, maxiters::Int=150, lr
       for k in num_obs
         println(k)
         node = neural_ode(train_t[1:k], data_dim)
+	println(log_dir)
+        if log_dir != ""
+          bson(joinpath(log_dir, "model$(k).bson"), nn_model=node, thetas=θs)
+        end
         θ = train_one_round(
             node, θ, train_y[:, 1:k],
             ADAMW(lr), maxiters;
             cb = log_results(θs, losses)
         )
       end
-      θs, losses
+      # last iteration
+      node = neural_ode(train_t, input_data_dim, output_data_dim)
+      θ = train_one_round(
+            node, θ, train_y,
+            ADAMW(lr), maxiters, vcat(train_y[:, 1], exo_data[:, 1]);
+            cb = log_results(θs, losses)
+
+      θs, losses, node
   end
   
   # Random.seed!(1)
-  θs, losses = train();
-  
+  θs, losses, node = train();
+  # node = neural_ode(train_t, input_data_dim, output_data_dim)
   idx = findmin(losses)[2]
   θ = θs[idx]
-  y0 = train_y[:,1]
-  node = neural_ode(train_t, data_dim)
-  resol = Array(node(y0, θ))
+  y0 = vcat(train_y[:, 1], exo_data[:, 1])
+  resol = Array(node(y0, θ))[1:output_data_dim, :]
   
-  θs, losses, resol
-
   # v = "Steps"
-  # pl = plot(tsteps, ode_data[1,:], color = :red, label = "Data: CGM", xlabel = "t", title = "CGM & $(v) & Bolus")
-  # plot!(tsteps, ode_data[2,:], color = :blue, label = "Data: $(v)")
-  # plot!(tsteps, ode_data[3,:], color = :green, label = "Data: Bolus")
+  # pl = plot(tsteps, non_exo_data[1,:], color = :red, label = "Data: CGM", xlabel = "t", title = "CGM, Steps, Bolus, Meals")
+  # plot!(tsteps, non_exo_data[2,:], color = :blue, label = "Data: Steps")
+  # plot!(tsteps, exo_data[1,:], color = :green, label = "Data: Bolus")
+  # plot!(tsteps, exo_data[2,:], color = :purple, label = "Data: Meals")
   # plot!(tsteps,resol[1,:], alpha=0.5, color = :red, label = "CGM")
   # plot!(tsteps,resol[2,:], alpha=0.5, color = :blue, label = "Steps")
-  # plot!(tsteps,resol[3,:], alpha=0.5, color = :green, label = "Bolus")
   # pl
+
+  println(log_dir)
+  if log_dir != ""
+    println(joinpath(log_dir, "model.bson"))
+    bson(joinpath(log_dir, "model.bson"), nn_model=node, theta=θ, loss=losses[idx], best_pred=resol, y0=y0)
+  end
+
+  θ, losses[idx], resol
+
 end
 
 function model_exo(non_exo_data::AbstractArray, exo_data::AbstractArray, batch_size::Int64=4, maxiters::Int=150, lr=0.01; log_dir="")
