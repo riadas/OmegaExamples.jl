@@ -46,14 +46,33 @@ function plot_best_model()
 
   # plot
   # original data
-  _, ode_data = prepare_all_data_meals_hypo(binsize, hypo_id=hypoid)
-  tsteps = range(0.0, 1.0, length=size(ode_data[1,:]))
+
+  for i in 1:length(sorted_dictionaries)
+    optimal_dict = sorted_dictionaries[i]
+    loss = optimal_dict[:loss]
+    best_pred = optimal_dict[:best_pred]
+    y0 = optimal_dict[:y0]
+    hypoid = optimal_dict[:hypoid]
+    binsize = optimal_dict[:binsize]
+    batchsize = optimal_dict[:batchsize]
+
+    _, ode_data = prepare_all_data_meals_hypo(binsize, hypo_id=hypoid)
+    tsteps = range(0.0, 1.0, length=length(ode_data[1,:]))
+
+    pl = plot(tsteps, ode_data[1,:], color = :red, label = "Data: CGM", xlabel = "t", title = "CGM, Steps, Bolus, Meals, loss=$(loss))")
+    plot!(tsteps, ode_data[2,:], color = :blue, label = "Data: Steps")
+    plot!(tsteps, ode_data[3,:], color = :green, label = "Data: Bolus")
+    plot!(tsteps, ode_data[4,:], color = :purple, label = "Data: Meals")
+    plot!(tsteps, best_pred[1,:], alpha=0.3, color = :red, label = "CGM")
+    plot!(tsteps, best_pred[2,:], alpha=0.3, color = :blue, label = "Steps")
+    savefig(pl, "optim_plots/optim_bin_$(binsize)_batch_$(batchsize)_hypoid_$(hypoid)_i_$(i).png")
+  end
   
   pl = plot(tsteps, ode_data[1,:], color = :red, label = "Data: CGM", xlabel = "t", title = "CGM, Steps, Bolus, Meals")
   plot!(tsteps, ode_data[2,:], color = :blue, label = "Data: Steps")
   plot!(tsteps, ode_data[3,:], color = :green, label = "Data: Bolus")
   plot!(tsteps, ode_data[4,:], color = :purple, label = "Data: Meals")
-  plot!(tsteps,best_pred[1,:], alpha=0.3, color = :red, label = "CGM")
-  plot!(tsteps,best_pred[2,:], alpha=0.3, color = :blue, label = "Steps")
+  plot!(tsteps, best_pred[1,:], alpha=0.3, color = :red, label = "CGM")
+  plot!(tsteps, best_pred[2,:], alpha=0.3, color = :blue, label = "Steps")
   pl, node, theta, loss, best_pred, y0, hypoid, binsize, batchsize
 end

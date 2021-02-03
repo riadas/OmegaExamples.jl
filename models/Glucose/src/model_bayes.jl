@@ -2,17 +2,25 @@ using DiffEqFlux, OrdinaryDiffEq, Flux, Optim, Plots, AdvancedHMC, MCMCChains
 using JLD, StatsPlots
 
 
-function model_bayes(ode_data::AbstractArray)
+function model_bayes(ode_data::AbstractArray, 
+                     numwarmup::Int = 500,
+                     numsamples::Int = 500,
+                     initstepsize::Float64 = 0.45,          
+                     odesolver = Tsit)
   u0 = ode_data[:, 1]
   datasize = length(ode_data[1,:])
-  tspan = (0.0, Float64(datasize) - 1)
-  tsteps = range(0.0, 1.0, length = datasize) # range(tspan[1], tspan[2], length = datasize)
+  println("datasize")
+  println(datasize)
+  tspan = (0.0, Float64(datasize) - 1) # (0.0, 0.5*(Float64(datasize) - 1))
+  tsteps = range(tspan[1], tspan[2], length = datasize) # range(tspan[1], tspan[2], length = datasize)
+  
+  data_dim = size(ode_data)[1]
 
   # ----- define Neural ODE architecture
   dudt2 = FastChain((x, p) -> x.^3,
-      FastDense(2, 25, swish), # FastDense(2, 50, tanh),
-      FastDense(25, 2)) # FastDense(2, 50, tanh),
-  prob_neuralode = NeuralODE(dudt2, tspan, Tsit5(), saveat = tsteps)
+      FastDense(data_dim, 25, swish), # FastDense(2, 50, tanh),
+      FastDense(25, data_dim)) # FastDense(2, 50, tanh),
+  prob_neuralode = NeuralODE(dudt2, tspan, odesolver(), saveat = tsteps) #Trapezoid
 
   # ----- define loss function for Neural ODE
   function predict_neuralode(p)
@@ -43,33 +51,38 @@ function model_bayes(ode_data::AbstractArray)
 
   prop = AdvancedHMC.NUTS{MultinomialTS, GeneralisedNoUTurn}(integrator)
 
-  adaptor = StanHMCAdaptor(MassMatrixAdaptor(metric), StepSizeAdaptor(0.45, prop.integrator))
+  adaptor = StanHMCAdaptor(MassMatrixAdaptor(metric), StepSizeAdaptor(initstepsize, prop.integrator))
 
-  samples, stats = sample(h, prop, Float64.(prob_neuralode.p), 500, adaptor, 500; progress=true)
+  samples, stats = sample(h, prop, Float64.(prob_neuralode.p), numwarmup, adaptor, numsamples; progress=true)
 
+  println("samples")
+  println(samples)
+  println(size(samples))
+  println(length(samples))
+  println(length(samples[1]))
   losses = map(x-> x[1],[loss_neuralode(samples[i]) for i in 1:length(samples)])
 
-  (samples, losses)
+  (samples, losses, predict_neuralode)
 end
 
 function model_bayes_exo(non_exo_data::AbstractArray, exo_data::AbstractArray)
   u0 = vcat(non_exo_data[:, 1], exo_data[:, 1])
   datasize = length(non_exo_data[1,:])
-  tspan = (0.0, Float64(datasize) - 1)
-  tsteps = range(0.0, 1.0, length = datasize) # range(tspan[1], tspan[2], length = datasize)
+  tspan = (0.0, 1.0) # (0.0, Float64(datasize) - 1)
+  tsteps = range(tspan[1], tspan[2], length = datasize) # range(tspan[1], tspan[2], length = datasize)
 
   input_data_dim = size(non_exo_data, 1) + size(exo_data, 1)
   output_data_dim = size(non_exo_data, 1)
 
   # ----- define Neural ODE architecture
   dudt = FastChain((x, p) -> x.^3,
-  FastDense(input_data_dim, 25, swish), # FastDense(2, 50, tanh),
-  FastDense(25, output_data_dim)) # FastDense(2, 50, tanh),
+  FastDense(input_data_dim, 50, swish), # FastDense(2, 50, tanh),
+  FastDense(50, input_data_dim)) # FastDense(2, 50, tanh),
 
-  function dudt_exo(u, p) 
-    dudt(vcat(u[:, 1], exo_data[:, 1]), p)
-  end
-  prob_neuralode = NeuralODE(dudt_exo, tspan, Tsit5(), saveat = tsteps)
+  # function dudt_exo(u::AbstractArray{<:Float64}, p::AbstractArray{<:Float64}) 
+  #   dudt(vcat(u[:, 1], exo_data[:, 1]), p)
+  # end
+  prob_neuralode = NeuralODE(dudt, tspan, Trapezoid(), saveat = tsteps) # Trapezoid
 
   # ----- define loss function for Neural ODE
   function predict_neuralode(p)
@@ -78,12 +91,12 @@ function model_bayes_exo(non_exo_data::AbstractArray, exo_data::AbstractArray)
 
   function loss_neuralode(p)
     pred = predict_neuralode(p)
-    loss = sum(abs2, non_exo_data .- pred)
+    loss = sum(abs2, non_exo_data .- pred[1:output_data_dim,:])
     return loss, pred
   end
 
   # ----- define Hamiltonian log density and gradient 
-  l(θ) = -sum(abs2, non_exo_data .- predict_neuralode(θ)) - sum(θ .* θ)
+  l(θ) = -sum(abs2, non_exo_data .- predict_neuralode(θ)[1:output_data_dim]) - sum(θ .* θ)
 
   function dldθ(θ)
     x, lambda = Flux.Zygote.pullback(l,θ)
@@ -100,13 +113,13 @@ function model_bayes_exo(non_exo_data::AbstractArray, exo_data::AbstractArray)
 
   prop = AdvancedHMC.NUTS{MultinomialTS, GeneralisedNoUTurn}(integrator)
 
-  adaptor = StanHMCAdaptor(MassMatrixAdaptor(metric), StepSizeAdaptor(0.45, prop.integrator))
+  adaptor = StanHMCAdaptor(MassMatrixAdaptor(metric), StepSizeAdaptor(0.1, prop.integrator))
 
-  samples, stats = sample(h, prop, Float64.(prob_neuralode.p), 500, adaptor, 500; progress=true)
+  samples, stats = sample(h, prop, Float64.(prob_neuralode.p), 1000, adaptor, 1000; progress=true)
 
   losses = map(x-> x[1],[loss_neuralode(samples[i]) for i in 1:length(samples)])
 
-  (samples, losses)
+  (samples, losses, predict_neuralode)
 end
 
 function plot_model_results(samples, losses, var::String)
@@ -141,7 +154,7 @@ function plot_model_results(samples, losses)
   plot!(tsteps, ode_data[3,:], color = :blue, label = "Data: Bolus")
 
   for k in 1:300
-    resol = predict_neuralode(samples[100:end][rand(1:400)])
+    resol = predict_neuralode(samples[800:end][rand(1:200)])
     plot!(tsteps,resol[1,:], alpha=0.1, color = :red, label = "")
     plot!(tsteps,resol[2,:], alpha=0.1, color = :blue, label = "")
     plot!(tsteps,resol[3,:], alpha=0.1, color = :blue, label = "")
