@@ -15,7 +15,7 @@ function model_bayes(ode_data::AbstractArray,
   println("datasize")
   println(datasize)
 
-  tspan = (0.0, Float64(datasize) - 1) # (0.0, 0.5*(Float64(datasize) - 1))
+  tspan = (0.0, Float64(datasize) - 1)  # (0.0, Float64(datasize) - 1) # (0.0, 0.5*(Float64(datasize) - 1))
   tsteps = range(tspan[1], tspan[2], length = datasize) # range(tspan[1], tspan[2], length = datasize)
 
   data_dim = size(ode_data)[1]
@@ -95,7 +95,7 @@ function model_bayes_exo(non_exo_data::AbstractArray,
                          log_dir="")
   u0 = vcat(non_exo_data[:, 1], exo_data[:, 1])
   datasize = length(non_exo_data[1,:])
-  tspan = (0.0, 1.0) # (0.0, Float64(datasize) - 1)
+  tspan = (0.0, Float64(datasize) - 1)  # (0.0, 1.0) # (0.0, Float64(datasize) - 1)
   tsteps = range(tspan[1], tspan[2], length = datasize) # range(tspan[1], tspan[2], length = datasize)
 
   input_data_dim = size(non_exo_data, 1) + size(exo_data, 1)

@@ -5,10 +5,10 @@ using JLD, StatsPlots
 
 # ----- START: OPTIMIZATION TEST FUNCTIONS ----- #
 # glucose, steps, bolus, meals
-function optim_all_vars_no_exo(bin_size::Int64, batch_size::Int=4, maxiters::Int=150, lr::Float64=0.01; hypo_id::Int64=1)
+function optim_all_vars_no_exo(bin_size::Int64, batch_size::Int=4, maxiters::Int=150, lr::Float64=0.01; hypo_id::Int64=1, log_dir="")
   u0, ode_data = prepare_all_data_meals_hypo(bin_size, hypo_id=hypo_id)
-  samples, losses, best_pred = model(ode_data, batch_size, maxiters, lr)
-  samples, losses, best_pred
+  model(ode_data, batch_size, maxiters, lr, log_dir=log_dir)
+  
 end
 
 # glucose, steps, bolus 
@@ -60,11 +60,11 @@ end
 
 # glucose, steps, bolus, meals
 function bayes_all_vars_no_exo(bin_size::Int64,
-                               numwarmup::Int = 500,
-                               numsamples::Int = 500,
-                               initstepsize::Float64 = 0.45,          
-                               odesolver = Tsit5;
-                               log_dir="")
+                              numwarmup::Int = 500,
+                              numsamples::Int = 500,
+                              initstepsize::Float64 = 0.45,          
+                              odesolver = Tsit5;
+                              log_dir="")
   u0, ode_data = prepare_all_data_meals_hypo(bin_size)
   ode_data = ode_data[1:4, :]
   samples, losses, predict_neuralode = model_bayes(ode_data, numwarmup, numsamples, initstepsize, odesolver, log_dir=log_dir)

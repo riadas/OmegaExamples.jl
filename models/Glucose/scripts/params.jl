@@ -25,7 +25,7 @@ function optparams()
 end
 
 function train(params)
-  samples, losses, best_pred = optim_all_vars_exo(params.binsize, 
+  samples, losses, best_pred = optim_all_vars_no_exo(params.binsize, 
                                                   params.batchsize, 
                                                   params.maxiters, 
                                                   params.lr, 
@@ -39,7 +39,7 @@ function allparams()
 end
 
 "Run with julia -L params.jl -E 'hyper(;)' -- --queue"
-function hyper(; params = Params(), n = 2)
+function hyper(; params = Params(), n = 100)
   params_ = allparams()
   paramsamples = rand(params_, n)
   display.(paramsamples)
