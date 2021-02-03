@@ -7,8 +7,8 @@ using Plots
 
 # const datadir = joinpath(dirname(pathof(Glucose)), "..", "data", "OhioT1DM-training")
 # const ohio5559 = joinpath(datadir, "559-ws-training.xml")
-# const ohio5559 = "/Users/riadas/Documents/urop/OhioT1DM-training/559-ws-training.xml"
-const ohio5559 = "/scratch/riadas/repos/OhioT1DM-training/559-ws-training.xml"
+const ohio5559 = "/Users/riadas/Documents/urop/OhioT1DM-training/559-ws-training.xml"
+# const ohio5559 = "/scratch/riadas/repos/OhioT1DM-training/559-ws-training.xml"
 
 function average_over_bins(data::AbstractArray, bin_size::Int64)
   size = min(length(data), bin_size)

@@ -9,8 +9,8 @@ using Flux, DiffEqFlux, OrdinaryDiffEq
 function plot_best_model()
   Core.eval(Main, :(import NNlib))
 
-  # data_directory = "/Users/riadas/Documents/urop/runs/odeoptim_firsttry"
-  data_directory = "/scratch/riadas/runs/odeoptim_firsttry/"
+  data_directory = "/Users/riadas/Documents/urop/OmegaExamples.jl/results/optim_runs_exo/"
+  # data_directory = "/scratch/riadas/runs/odeoptim_firsttry/"
   folder_names = readdir(data_directory)
   println(folder_names)
   output_dictionaries = []
@@ -75,4 +75,32 @@ function plot_best_model()
   plot!(tsteps, best_pred[1,:], alpha=0.3, color = :red, label = "CGM")
   plot!(tsteps, best_pred[2,:], alpha=0.3, color = :blue, label = "Steps")
   pl, node, theta, loss, best_pred, y0, hypoid, binsize, batchsize
+end
+
+function find_model(index::Int)
+  Core.eval(Main, :(import NNlib))
+
+  data_directory = "/Users/riadas/Documents/urop/OmegaExamples.jl/results/optim_runs_exo/"
+  # data_directory = "/scratch/riadas/runs/odeoptim_firsttry/"
+  folder_names = readdir(data_directory)
+  println(folder_names)
+  output_dictionaries = []
+  for folder in folder_names
+    if "model.bson" in readdir(joinpath(data_directory, folder)) # if run has finished
+      d = BSON.load(joinpath(data_directory, folder, "model.bson"))
+  
+      # id = split(folder, "_")[1]
+      # params = BSON.load(joinpath(data_directory, folder, "$(id).bson"))
+      # d[:hypoid] = params[:param][:hypoid]
+      # d[:binsize] = params[:param][:binsize]
+      # d[:batchsize] = params[:param][:batchsize]
+  
+      push!(output_dictionaries, d)
+  
+    end
+  end
+  
+  sorted_dictionaries = sort(output_dictionaries, by=(x -> x[:loss]))
+  sorted_dictionaries[index][:nn_model]
+  end
 end
