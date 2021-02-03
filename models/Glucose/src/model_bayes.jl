@@ -1,20 +1,33 @@
 using DiffEqFlux, OrdinaryDiffEq, Flux, Optim, Plots, AdvancedHMC, MCMCChains
 using JLD, StatsPlots
-
+using BSON: bson
 
 function model_bayes(ode_data::AbstractArray, 
                      numwarmup::Int = 500,
                      numsamples::Int = 500,
                      initstepsize::Float64 = 0.45,          
-                     odesolver = Tsit)
+                     odesolver = Tsit5;
+                     log_dir="")
   u0 = ode_data[:, 1]
+  println("u0")
+  println(u0)
   datasize = length(ode_data[1,:])
   println("datasize")
   println(datasize)
+
   tspan = (0.0, Float64(datasize) - 1) # (0.0, 0.5*(Float64(datasize) - 1))
   tsteps = range(tspan[1], tspan[2], length = datasize) # range(tspan[1], tspan[2], length = datasize)
-  
+
   data_dim = size(ode_data)[1]
+
+  println("tspan")
+  println(tspan)
+
+  println("tsteps")
+  println(tsteps)
+
+  println("data_dim")
+  println(data_dim)
 
   # ----- define Neural ODE architecture
   dudt2 = FastChain((x, p) -> x.^3,
@@ -29,6 +42,10 @@ function model_bayes(ode_data::AbstractArray,
 
   function loss_neuralode(p)
     pred = predict_neuralode(p)
+    println("pred")
+    println(size(pred))
+    println("ode_data")
+    println(size(ode_data))
     loss = sum(abs2, ode_data .- pred)
     return loss, pred
   end
@@ -59,13 +76,23 @@ function model_bayes(ode_data::AbstractArray,
   println(samples)
   println(size(samples))
   println(length(samples))
-  println(length(samples[1]))
+  println(size(samples[1]))
   losses = map(x-> x[1],[loss_neuralode(samples[i]) for i in 1:length(samples)])
-
+  
+  if log_dir != ""
+    bson(joinpath(log_dir, "bayes_model_no_exo.bson"), nn_model=prob_neuralode, samples=samples, losses=losses)
+  end
+  
   (samples, losses, predict_neuralode)
 end
 
-function model_bayes_exo(non_exo_data::AbstractArray, exo_data::AbstractArray)
+function model_bayes_exo(non_exo_data::AbstractArray, 
+                         exo_data::AbstractArray,
+                         numwarmup::Int = 500,
+                         numsamples::Int = 500,
+                         initstepsize::Float64 = 0.45,          
+                         odesolver = Tsit5;
+                         log_dir="")
   u0 = vcat(non_exo_data[:, 1], exo_data[:, 1])
   datasize = length(non_exo_data[1,:])
   tspan = (0.0, 1.0) # (0.0, Float64(datasize) - 1)
@@ -82,7 +109,7 @@ function model_bayes_exo(non_exo_data::AbstractArray, exo_data::AbstractArray)
   # function dudt_exo(u::AbstractArray{<:Float64}, p::AbstractArray{<:Float64}) 
   #   dudt(vcat(u[:, 1], exo_data[:, 1]), p)
   # end
-  prob_neuralode = NeuralODE(dudt, tspan, Trapezoid(), saveat = tsteps) # Trapezoid
+  prob_neuralode = NeuralODE(dudt, tspan, odesolver(), saveat = tsteps) # Trapezoid
 
   # ----- define loss function for Neural ODE
   function predict_neuralode(p)
@@ -113,11 +140,15 @@ function model_bayes_exo(non_exo_data::AbstractArray, exo_data::AbstractArray)
 
   prop = AdvancedHMC.NUTS{MultinomialTS, GeneralisedNoUTurn}(integrator)
 
-  adaptor = StanHMCAdaptor(MassMatrixAdaptor(metric), StepSizeAdaptor(0.1, prop.integrator))
+  adaptor = StanHMCAdaptor(MassMatrixAdaptor(metric), StepSizeAdaptor(initstepsize, prop.integrator))
 
-  samples, stats = sample(h, prop, Float64.(prob_neuralode.p), 1000, adaptor, 1000; progress=true)
+  samples, stats = sample(h, prop, Float64.(prob_neuralode.p), numwarmup, adaptor, numsamples; progress=true)
 
   losses = map(x-> x[1],[loss_neuralode(samples[i]) for i in 1:length(samples)])
+
+  if log_dir != ""
+    bson(joinpath(log_dir, "bayes_model_exo.bson"), nn_model=prob_neuralode, samples=samples, losses=losses)
+  end
 
   (samples, losses, predict_neuralode)
 end
