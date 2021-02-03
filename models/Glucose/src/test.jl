@@ -144,12 +144,13 @@ function bayes_all_vars_exo_with_init(bin_size::Int64;
                                       numsamples::Int = 500,
                                       initstepsize::Float64 = 0.45,          
                                       odesolver = Tsit5,
-                                      log_dir="")
+                                      log_dir="",
+				      initid=81)
   u0, ode_data = prepare_all_data_meals_hypo(bin_size)
   non_exo_data = ode_data[1:2, :]
   exo_data = ode_data[3:4, :]
-  samples, losses, predict_neuralode = model_bayes_exo_with_init(non_exo_data, exo_data, numwarmup, numsamples, initstepsize, odesolver, log_dir=log_dir)
-  tsteps = range(0.0, Float64(size(ode_data)[2]) - 1, length=size(ode_data)[2])
+  samples, losses, predict_neuralode = model_bayes_exo_with_init(non_exo_data, exo_data, numwarmup, numsamples, initstepsize, odesolver, log_dir=log_dir, initid=initid)
+  tsteps = range(0.0, 1.0, length=size(ode_data)[2])
   ################### RETRODICTED PLOTS: TIME SERIES #################
   pl = plot(tsteps, ode_data[1,:], color = :red, label = "Data: CGM", xlabel = "t", title = "CGM, Steps, and Bolus")
   plot!(tsteps, ode_data[2,:], color = :blue, label = "Data: Steps")
@@ -167,7 +168,7 @@ function bayes_all_vars_exo_with_init(bin_size::Int64;
 
   plot!(tsteps, prediction[1,:], color = :black, w = 2, label = "C")
   plot!(tsteps, prediction[2,:], color = :black, w = 2, label = "S")
-  savefig(pl, "bayes_full_data_exo_with_init_bin_$(bin_size)_i_$(rand(1:100)).png")
+  # savefig(pl, "bayes_full_data_exo_with_init_bin_$(bin_size)_initid_$(initid)_i_$(rand(1:100)).png")
 end
 
 # glucose, steps, bolus 
