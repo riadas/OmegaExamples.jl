@@ -164,11 +164,11 @@ function min_distance_btn_car_and_ped(scenes::AbstractArray)
   minimum(map(distance_btn_car_and_ped, scenes))
 end
 
-function dist(a, b)
+function dist(a, b) 
   a1, a2 = a 
   b1, b2 = b 
-  sqrt((a1 - b1)^2 + (a2 - b2)^2)
-end
+  sqrt((a1 - b1)^2 + (a2 - b2)^2) 
+end 
 
 """Check if collision occurred during scene"""
 function check_collision(scene::Scene)::Bool

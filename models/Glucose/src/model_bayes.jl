@@ -181,7 +181,7 @@ function model_bayes_exo_with_init(non_exo_data::AbstractArray,
 
   # prob_neuralode = NeuralODE(dudt, tspan, odesolver(), saveat = tsteps) # Trapezoid
 
-  prob_neuralode = find_model(81)
+  prob_neuralode = find_model(94)
 
   # ----- define loss function for Neural ODE
   function predict_neuralode(p)

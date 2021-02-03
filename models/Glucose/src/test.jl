@@ -149,7 +149,7 @@ function bayes_all_vars_exo_with_init(bin_size::Int64;
   non_exo_data = ode_data[1:2, :]
   exo_data = ode_data[3:4, :]
   samples, losses, predict_neuralode = model_bayes_exo_with_init(non_exo_data, exo_data, numwarmup, numsamples, initstepsize, odesolver, log_dir=log_dir)
-  tsteps = range(0.0, 1.0, length=size(ode_data)[2])
+  tsteps = range(0.0, Float64(size(ode_data)[2]) - 1, length=size(ode_data)[2])
   ################### RETRODICTED PLOTS: TIME SERIES #################
   pl = plot(tsteps, ode_data[1,:], color = :red, label = "Data: CGM", xlabel = "t", title = "CGM, Steps, and Bolus")
   plot!(tsteps, ode_data[2,:], color = :blue, label = "Data: Steps")
@@ -157,7 +157,7 @@ function bayes_all_vars_exo_with_init(bin_size::Int64;
   plot!(tsteps, ode_data[4,:], color = :purple, label = "Data: Meals")
 
   for k in 1:300
-    resol = predict_neuralode(samples[numsamples-400:end][rand(1:400)])
+    resol = predict_neuralode(samples[numsamples-100:end][rand(1:100)])
     plot!(tsteps,resol[1,:], alpha=0.1, color = :red, label = "")
     plot!(tsteps,resol[2,:], alpha=0.1, color = :blue, label = "")
   end
