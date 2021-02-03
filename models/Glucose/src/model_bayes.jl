@@ -1,7 +1,6 @@
 using DiffEqFlux, OrdinaryDiffEq, Flux, Optim, Plots, AdvancedHMC, MCMCChains
 using JLD, StatsPlots
 using BSON
-using ODEInterfaceDiffEq
 
 function model_bayes(ode_data::AbstractArray, 
                      numwarmup::Int = 500,
@@ -16,7 +15,7 @@ function model_bayes(ode_data::AbstractArray,
   println("datasize")
   println(datasize)
 
-  tspan = (0.0, Float64(datasize) - 1)  # (0.0, Float64(datasize) - 1) # (0.0, 0.5*(Float64(datasize) - 1))
+  tspan = (0.0, 1.0) # (0.0, Float64(datasize) - 1)  # (0.0, Float64(datasize) - 1) # (0.0, 0.5*(Float64(datasize) - 1))
   tsteps = range(tspan[1], tspan[2], length = datasize) # range(tspan[1], tspan[2], length = datasize)
 
   data_dim = size(ode_data)[1]
@@ -160,10 +159,12 @@ function model_bayes_exo_with_init(non_exo_data::AbstractArray,
                                    numsamples::Int = 500,
                                    initstepsize::Float64 = 0.45,          
                                    odesolver = Trapezoid;
+				   initid=81,
                                    log_dir="")
+
   u0 = vcat(non_exo_data[:, 1], exo_data[:, 1])
   datasize = length(non_exo_data[1,:])
-  tspan = (0.0, Float64(datasize) - 1)  # (0.0, 1.0) # (0.0, Float64(datasize) - 1)
+  tspan = (0.0, 1.0)  # (0.0, 1.0) # (0.0, Float64(datasize) - 1)
   tsteps = range(tspan[1], tspan[2], length = datasize) # range(tspan[1], tspan[2], length = datasize)
    
   input_data_dim = size(non_exo_data, 1) + size(exo_data, 1)
@@ -227,7 +228,7 @@ end
 function find_model(index::Int)
   Core.eval(Main, :(import NNlib))
 
-  data_directory = "/Users/riadas/Documents/urop/OmegaExamples.jl/results/optim_runs_exo/odeoptim_firsttry/"
+  data_directory = "/scratch/riadas/repos/OmegaExamples.jl/results/optim_runs_exo/odeoptim_firsttry/"
   # data_directory = "/scratch/riadas/runs/odeoptim_firsttry/"
   folder_names = readdir(data_directory)
   println(folder_names)
