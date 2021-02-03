@@ -6,7 +6,7 @@ using Interact
 using Reel
 using Blink
 
-export simulate_scene, animate_scene, check_collision
+export simulate_scene, animate_scene, check_collision, distance_btn_car_and_ped, min_distance_btn_car_and_ped
 
 AutoViz.set_render_mode(:fancy)
 AutoViz.colortheme["background"] = colorant"black"
@@ -97,7 +97,7 @@ end
 function animate_scene(scenes::AbstractArray, obstruction::RenderableObstruction, roadway::Roadway)
   # create text overlay
   textOverlays = [[TextOverlay(
-      text=["Vehicle speed: $(get_by_id(scenes[i], 1).state.veh.v)"],
+      text=["Vehicle speed: $(get_by_id(scenes[i], 1).state.veh.v)", "Distance to ped: $(distance_btn_car_and_ped(scenes[i]))", "Crashing: $(check_collision(scenes[i]))"],
       font_size=13, pos=VecE2(20.0, 50.0), color=colorant"white",
   )] for i in 1:length(scenes)]
 
@@ -160,8 +160,14 @@ function distance_btn_car_and_ped(scene::Scene)
   end
 end
 
-function min_distance_btn_car_and_ped(scene::AbstractArray)
+function min_distance_btn_car_and_ped(scenes::AbstractArray)
   minimum(map(distance_btn_car_and_ped, scenes))
+end
+
+function dist(a, b)
+  a1, a2 = a 
+  b1, b2 = b 
+  sqrt((a1 - b1)^2 + (a2 - b2)^2)
 end
 
 """Check if collision occurred during scene"""
