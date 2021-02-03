@@ -1,6 +1,6 @@
 using DiffEqFlux, OrdinaryDiffEq, Flux, Optim, Plots, AdvancedHMC, MCMCChains
 using JLD, StatsPlots
-using BSON: bson
+using BSON
 using ODEInterfaceDiffEq
 
 function model_bayes(ode_data::AbstractArray, 
@@ -152,6 +152,94 @@ function model_bayes_exo(non_exo_data::AbstractArray,
   end
 
   (samples, losses, predict_neuralode)
+end
+
+function model_bayes_exo_with_init(non_exo_data::AbstractArray, 
+                                   exo_data::AbstractArray,
+                                   numwarmup::Int = 500,
+                                   numsamples::Int = 500,
+                                   initstepsize::Float64 = 0.45,          
+                                   odesolver = Trapezoid;
+                                   log_dir="")
+  u0 = vcat(non_exo_data[:, 1], exo_data[:, 1])
+  datasize = length(non_exo_data[1,:])
+  tspan = (0.0, Float64(datasize) - 1)  # (0.0, 1.0) # (0.0, Float64(datasize) - 1)
+  tsteps = range(tspan[1], tspan[2], length = datasize) # range(tspan[1], tspan[2], length = datasize)
+   
+  input_data_dim = size(non_exo_data, 1) + size(exo_data, 1)
+  output_data_dim = size(non_exo_data, 1)
+
+  # ----- define Neural ODE architecture
+  # dudt = FastChain((x, p) -> x.^3,
+  # FastDense(input_data_dim, 50, swish), # FastDense(2, 50, tanh),
+  # FastDense(50, input_data_dim)) # FastDense(2, 50, tanh),
+
+  # function dudt_exo(u::AbstractArray{<:Float64}, p::AbstractArray{<:Float64}) 
+  #   dudt(vcat(u[:, 1], exo_data[:, 1]), p)
+  # end
+
+  # prob_neuralode = NeuralODE(dudt, tspan, odesolver(), saveat = tsteps) # Trapezoid
+
+  prob_neuralode = find_model(81)
+
+  # ----- define loss function for Neural ODE
+  function predict_neuralode(p)
+    Array(prob_neuralode(u0, p))
+  end
+
+  function loss_neuralode(p)
+    pred = predict_neuralode(p)
+    loss = sum(abs2, non_exo_data .- pred[1:output_data_dim,:])
+    return loss, pred
+  end
+
+  # ----- define Hamiltonian log density and gradient 
+  l(θ) = -sum(abs2, non_exo_data .- predict_neuralode(θ)[1:output_data_dim]) - sum(θ .* θ)
+
+  function dldθ(θ)
+    x, lambda = Flux.Zygote.pullback(l,θ)
+    grad = first(lambda(1))
+    return x, grad
+  end
+
+  # ----- define step size adaptor function and sampler
+  metric = DiagEuclideanMetric(length(prob_neuralode.p))
+
+  h = Hamiltonian(metric, l, dldθ)
+
+  integrator = Leapfrog(find_good_stepsize(h, Float64.(prob_neuralode.p)))
+
+  prop = AdvancedHMC.NUTS{MultinomialTS, GeneralisedNoUTurn}(integrator)
+
+  adaptor = StanHMCAdaptor(MassMatrixAdaptor(metric), StepSizeAdaptor(initstepsize, prop.integrator))
+
+  samples, stats = sample(h, prop, Float64.(prob_neuralode.p), numwarmup, adaptor, numsamples; progress=true)
+
+  losses = map(x-> x[1],[loss_neuralode(samples[i]) for i in 1:length(samples)])
+
+  if log_dir != ""
+    bson(joinpath(log_dir, "bayes_model_exo.bson"), nn_model=prob_neuralode, samples=samples, losses=losses)
+  end
+
+  (samples, losses, predict_neuralode)
+end
+
+function find_model(index::Int)
+  Core.eval(Main, :(import NNlib))
+
+  data_directory = "/Users/riadas/Documents/urop/OmegaExamples.jl/results/optim_runs_exo/odeoptim_firsttry/"
+  # data_directory = "/scratch/riadas/runs/odeoptim_firsttry/"
+  folder_names = readdir(data_directory)
+  println(folder_names)
+  output_dictionaries = []
+  for folder in folder_names
+    if "model.bson" in readdir(joinpath(data_directory, folder)) # if run has finished
+      d = BSON.load(joinpath(data_directory, folder, "model.bson"))
+      push!(output_dictionaries, d)  
+    end
+  end
+  sorted_dictionaries = sort(output_dictionaries, by=(x -> x[:loss]))
+  sorted_dictionaries[index][:nn_model]
 end
 
 function plot_model_results(samples, losses, var::String)
