@@ -70,7 +70,7 @@ function model(ode_data::AbstractArray, batch_size::Int=4, maxiters::Int=150, lr
       θ = train_one_round(
             node, θ, train_y,
             ADAMW(lr), maxiters, vcat(train_y[:, 1], exo_data[:, 1]);
-            cb = log_results(θs, losses)
+            cb = log_results(θs, losses))
 
       θs, losses, node
   end
