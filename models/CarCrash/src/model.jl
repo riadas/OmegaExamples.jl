@@ -6,7 +6,7 @@ using Interact
 using Reel
 using Blink
 
-export simulate_scene, animate_scene, check_collision
+export simulate_scene, animate_scene, check_collision, distance_btn_car_and_ped, min_distance_btn_car_and_ped
 
 AutoViz.set_render_mode(:fancy)
 AutoViz.colortheme["background"] = colorant"black"
@@ -97,7 +97,7 @@ end
 function animate_scene(scenes::AbstractArray, obstruction::RenderableObstruction, roadway::Roadway)
   # create text overlay
   textOverlays = [[TextOverlay(
-      text=["Vehicle speed: $(get_by_id(scenes[i], 1).state.veh.v)"],
+      text=["Vehicle speed: $(get_by_id(scenes[i], 1).state.veh.v)", "Distance to ped: $(distance_btn_car_and_ped(scenes[i]))", "Crashing: $(check_collision(scenes[i]))"],
       font_size=13, pos=VecE2(20.0, 50.0), color=colorant"white",
   )] for i in 1:length(scenes)]
 
@@ -115,6 +115,59 @@ function animate_scene(scenes::AbstractArray, obstruction::RenderableObstruction
       render([roadway, obstruction, scenes[step], neighborOverlays[step][1], textOverlays[step][1]])
   end
   body!(w, viz)
+end
+
+function distance_btn_car_and_ped(scene::Scene)
+  if check_collision(scene)
+    0.0
+  else
+    carPos = scene[1].state.veh.posG
+    pedPos = scene[2].state.veh.posG
+    
+    carWidth = 4.8 # length(scene[1].def)
+    carHeight = 1.0 # width(scene[1].def)
+
+    pedWidth = 1.0 # length(scene[2].def)
+    pedHeight = 1.0 # width(scene[1].def)
+
+    x1, y1, x1b, y1b = (carPos.x - carWidth/2.0, carPos.y - carHeight/2.0, carPos.x + carWidth/2.0, carPos.y + carHeight/2.0)
+    x2, y2, x2b, y2b = (pedPos.x - pedWidth/2.0, pedPos.y - pedHeight/2.0, pedPos.x + pedWidth/2.0, pedPos.y + pedHeight/2.0)
+
+    left = x2b < x1
+    right = x1b < x2
+    bottom = y2b < y1
+    top = y1b < y2
+
+    if top && left
+      return dist((x1, y1b), (x2b, y2))
+    elseif left && bottom
+      return dist((x1, y1), (x2b, y2b))
+    elseif bottom && right
+      return dist((x1b, y1), (x2, y2b))
+    elseif right && top
+      return dist((x1b, y1b), (x2, y2))
+    elseif left
+      return x1 - x2b
+    elseif right
+      return x2 - x1b
+    elseif bottom
+      return y1 - y2b
+    elseif top
+      return y2 - y1b
+    else # rectangles intersect
+      return 0.0
+    end
+  end
+end
+
+function min_distance_btn_car_and_ped(scenes::AbstractArray)
+  minimum(map(distance_btn_car_and_ped, scenes))
+end
+
+function dist(a, b)
+  a1, a2 = a 
+  b1, b2 = b 
+  sqrt((a1 - b1)^2 + (a2 - b2)^2)
 end
 
 """Check if collision occurred during scene"""
