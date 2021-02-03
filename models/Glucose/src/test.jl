@@ -59,11 +59,11 @@ end
 # ----- START: NEURAL BAYES TEST FUNCTIONS ----- #
 
 # glucose, steps, bolus, meals
-function bayes_all_vars_no_exo(bin_size::Int64,
+function bayes_all_vars_no_exo(bin_size::Int64;
                                numwarmup::Int = 500,
                                numsamples::Int = 500,
                                initstepsize::Float64 = 0.45,          
-                               odesolver = Tsit5;
+                               odesolver = Tsit5,
                                log_dir="")
   u0, ode_data = prepare_all_data_meals_hypo(bin_size)
   ode_data = ode_data[1:4, :]
@@ -108,11 +108,11 @@ function bayes_one_var_no_exo(var::String)
 end
 
 # glucose, steps, bolus, meals
-function bayes_all_vars_exo(bin_size::Int64,
+function bayes_all_vars_exo(bin_size::Int64;
                             numwarmup::Int = 500,
                             numsamples::Int = 500,
                             initstepsize::Float64 = 0.45,          
-                            odesolver = Tsit5;
+                            odesolver = Tsit5,
                             log_dir="")
   u0, ode_data = prepare_all_data_meals_hypo(bin_size)
   non_exo_data = ode_data[1:2, :]
