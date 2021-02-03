@@ -2,6 +2,7 @@ using DiffEqFlux, OrdinaryDiffEq, Flux, Optim, Plots, AdvancedHMC, MCMCChains
 using JLD, StatsPlots
 using BSON
 using ODEInterfaceDiffEq
+using Random
 
 function model_bayes(ode_data::AbstractArray, 
                      numwarmup::Int = 500,
