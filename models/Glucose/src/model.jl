@@ -66,10 +66,10 @@ function model(ode_data::AbstractArray, batch_size::Int=4, maxiters::Int=150, lr
         )
       end
       # last iteration
-      node = neural_ode(train_t, input_data_dim, output_data_dim)
+      node = neural_ode(train_t, data_dim)
       θ = train_one_round(
             node, θ, train_y,
-            ADAMW(lr), maxiters, vcat(train_y[:, 1], exo_data[:, 1]);
+            ADAMW(lr), maxiters, train_y[:, 1];
             cb = log_results(θs, losses)
       )
       θs, losses, node
@@ -80,17 +80,18 @@ function model(ode_data::AbstractArray, batch_size::Int=4, maxiters::Int=150, lr
   # node = neural_ode(train_t, input_data_dim, output_data_dim)
   idx = findmin(losses)[2]
   θ = θs[idx]
-  y0 = vcat(train_y[:, 1], exo_data[:, 1])
-  resol = Array(node(y0, θ))[1:output_data_dim, :]
+  y0 = train_y[:, 1]
+  resol = Array(node(y0, θ))
   
   # v = "Steps"
-  # pl = plot(tsteps, non_exo_data[1,:], color = :red, label = "Data: CGM", xlabel = "t", title = "CGM, Steps, Bolus, Meals")
-  # plot!(tsteps, non_exo_data[2,:], color = :blue, label = "Data: Steps")
-  # plot!(tsteps, exo_data[1,:], color = :green, label = "Data: Bolus")
-  # plot!(tsteps, exo_data[2,:], color = :purple, label = "Data: Meals")
-  # plot!(tsteps,resol[1,:], alpha=0.5, color = :red, label = "CGM")
-  # plot!(tsteps,resol[2,:], alpha=0.5, color = :blue, label = "Steps")
-  # pl
+  pl = plot(tsteps, ode_data[1,:], color = :red, label = "Data: CGM", xlabel = "t", title = "CGM, Steps, Bolus, Meals")
+  plot!(tsteps, ode_data[2,:], color = :blue, label = "Data: Steps")
+  plot!(tsteps, ode_data[3,:], color = :green, label = "Data: Bolus")
+  plot!(tsteps, ode_data[4,:], color = :purple, label = "Data: Meals")
+  plot!(tsteps,resol[1,:], alpha=0.5, color = :red, label = "CGM")
+  plot!(tsteps,resol[2,:], alpha=0.5, color = :blue, label = "Steps")
+  plot!(tsteps,resol[3,:], alpha=0.5, color = :red, label = "Bolus")
+  plot!(tsteps,resol[4,:], alpha=0.5, color = :blue, label = "Meals")
 
   println(log_dir)
   println("idx")
@@ -103,10 +104,10 @@ function model(ode_data::AbstractArray, batch_size::Int=4, maxiters::Int=150, lr
   println(resol)
   if log_dir != ""
     println(joinpath(log_dir, "model.bson"))
-    bson(joinpath(log_dir, "model.bson"), nn_model=node, theta=θ, loss=losses[idx], best_pred=resol, y0=y0)
+    bson(joinpath(log_dir, "4_model.bson"), nn_model=node, theta=θ, loss=losses[idx], best_pred=resol, y0=y0)
   end
 
-  θ, losses[idx], resol
+  θ, losses[idx], resol, pl
 
 end
 
@@ -114,8 +115,10 @@ function model_exo(non_exo_data::AbstractArray, exo_data::AbstractArray, batch_s
   # u0, ode_data = prepare_data("basis_steps", bin_size)
   u0 = non_exo_data[:, 1]
   datasize = length(non_exo_data[1,:])
-  tspan = (0.0, Float64(datasize) - 1)
+  tspan = (0.0, 1.0) # (0.0, Float64(datasize) - 1)
   tsteps = range(tspan[1], tspan[2], length = datasize)
+
+  @show maxiters
 
   input_data_dim = size(non_exo_data, 1) + size(exo_data, 1)
   output_data_dim = size(non_exo_data, 1)
@@ -140,48 +143,37 @@ function model_exo(non_exo_data::AbstractArray, exo_data::AbstractArray, batch_s
       # println(data_dim)
       f = FastChain(FastDense(input_data_dim, 64, swish),
                     FastDense(64, 32, swish),
-                    FastDense(32, input_data_dim))
-      # function f_exo(u, p)
-      #   # println("vcat(u[:,1], exo_data[:,1])")
-      #   # println(size(vcat(u[:,1], exo_data[:,1])))
-      #   # println(vcat(u[:,1], exo_data[:,1]))
-      #   # f(vcat(u[:,1], exo_data[:,1]), p)
-      #   f(u, p)
-      # end
-      node = NeuralODE(f, (minimum(t), maximum(t)), Tsit5(),
-                        saveat = saveat, abstol = 1e-9,
-                        reltol = 1e-9)
+                    FastDense(32, output_data_dim))
+      p_model = initial_params(f)
+      function f_exo(u, p, t)
+        f(vcat(u, exo_data[:, Int(round(t*(datasize - 1)/(tspan[2] - tspan[1]) + (1 - (datasize - 1)*tspan[1]/(tspan[2] - tspan[1]))))]), p)
+      end
+      prob = ODEProblem(f_exo, u0, tspan, nothing)
+      prob, p_model
   end
   
-  function train_one_round(node, θ, y, opt, maxiters,
+  function train_one_round(prob, p_model, θ, y, opt, maxiters,
                             y0 = y[:, 1]; kwargs...)
-      # println("y0")
-      # println(size(y0))
-      # println(y0)
-  
-      # println("theta")
-      # println(size(node.p))
-      # println(θ)
-  
-      # println("node.p")
-      # println(size(node.p))
-      #println(node.p)
 
-      predict(θ) = Array(node(y0, θ))
-      loss(θ) = begin
-        # println("here")
-          pred = predict(θ)
-          # println("pred")
-          # println(size(pred))
-          # println(pred)
-          # println(size(y)) 
-          Flux.mse(pred[1:output_data_dim, :], y)
+      # println("SHOW HERE 2")
+      # @show size(y)
+      function predict(θ)
+        _prob = remake(prob, p=θ)
+        Array(solve(_prob, Tsit5(), saveat=tsteps, abstol = 1e-9, reltol = 1e-9))
       end
-  
-      θ = θ == nothing ? node.p : θ
+      # predict(θ) = Array(node(y0, θ))
+      function loss(θ)
+        pred = predict(θ)
+        # println("SHOW HERE 3")
+        # @show size(pred)
+        Flux.mse(pred[:, 1:size(y)[2]], y)
+      end
+      
+      @show maxiters
+      θ = θ == nothing ? p_model : θ
       res = DiffEqFlux.sciml_train(
-          loss, θ, opt,
-          maxiters = maxiters;
+          loss, θ, opt, 
+          maxiters=maxiters;
           kwargs...
       )
       return res.minimizer
@@ -199,34 +191,37 @@ function model_exo(non_exo_data::AbstractArray, exo_data::AbstractArray, batch_s
       num_obs = batch_size:batch_size:length(train_t)
       for k in num_obs
         println(k)
-        node = neural_ode(train_t[1:k], input_data_dim, output_data_dim)
-        println(log_dir)
+        prob, p_model = neural_ode(train_t[1:k], input_data_dim, output_data_dim)
+        # println("LOOK HERE")
+        # @show size(train_y[:, 1:k])
         if log_dir != ""
-          bson(joinpath(log_dir, "model$(k).bson"), nn_model=node, thetas=θs)
+          bson(joinpath(log_dir, "model$(k).bson"), nn_model=prob, thetas=θs)
         end
+        @show train_y[:, 1:k]
         θ = train_one_round(
-            node, θ, train_y[:, 1:k],
-            ADAMW(lr), maxiters, vcat(train_y[:, 1], exo_data[:, 1]);
+            prob, p_model, θ, train_y[:, 1:k],
+            ADAMW(lr), maxiters, train_y[:, 1];
             cb = log_results(θs, losses)
         )
       end
       # last iteration
-      node = neural_ode(train_t, input_data_dim, output_data_dim)
+      prob, p_model = neural_ode(train_t, input_data_dim, output_data_dim)
       θ = train_one_round(
-            node, θ, train_y,
-            ADAMW(lr), maxiters, vcat(train_y[:, 1], exo_data[:, 1]);
+            prob, p_model, θ, train_y,
+            ADAMW(lr), maxiters, train_y[:, 1];
             cb = log_results(θs, losses)
       )
-      θs, losses, node
+      θs, losses, prob
   end
   
   # Random.seed!(1)
-  θs, losses, node = train();
+  θs, losses, prob = train();
   # node = neural_ode(train_t, input_data_dim, output_data_dim)  
   idx = findmin(losses)[2]
   θ = θs[idx]
-  y0 = vcat(train_y[:, 1], exo_data[:, 1])
-  resol = Array(node(y0, θ))[1:output_data_dim, :]
+  y0 = train_y[:, 1]
+  _prob = remake(prob, p=θ)
+  resol = Array(solve(_prob, Tsit5(), saveat=tsteps, abstol = 1e-9, reltol = 1e-9))
 
   println(log_dir)
   println("idx")
@@ -250,7 +245,7 @@ function model_exo(non_exo_data::AbstractArray, exo_data::AbstractArray, batch_s
   println(log_dir)
   if log_dir != ""
     println(joinpath(log_dir, "1_model$(num).bson"))
-    bson(joinpath(log_dir, "1_model$(num).bson"), nn_model=node, theta=θ, loss=losses[idx], best_pred=resol, y0=y0)
+    bson(joinpath(log_dir, "1_model$(num).bson"), nn_model=prob, theta=θ, loss=losses[idx], best_pred=resol, y0=y0)
     savefig(pl, joinpath(log_dir, "1_image$(num).png"))
   end
   

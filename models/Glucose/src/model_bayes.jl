@@ -94,7 +94,9 @@ function model_bayes_exo(non_exo_data::AbstractArray,
                          initstepsize::Float64 = 0.45,          
                          odesolver = Trapezoid;
                          log_dir="")
-  u0 = vcat(non_exo_data[:, 1], exo_data[:, 1])
+
+  #@show size(non_exo_data)
+  u0 = non_exo_data[:, 1]
   datasize = length(non_exo_data[1,:])
   tspan = (0.0, Float64(datasize) - 1)  # (0.0, 1.0) # (0.0, Float64(datasize) - 1)
   tsteps = range(tspan[1], tspan[2], length = datasize) # range(tspan[1], tspan[2], length = datasize)
@@ -105,26 +107,36 @@ function model_bayes_exo(non_exo_data::AbstractArray,
   # ----- define Neural ODE architecture
   dudt = FastChain((x, p) -> x.^3,
   FastDense(input_data_dim, 50, swish), # FastDense(2, 50, tanh),
-  FastDense(50, input_data_dim)) # FastDense(2, 50, tanh),
+  FastDense(50, output_data_dim)) # FastDense(2, 50, tanh),
+  p_model = initial_params(dudt) 
 
-  # function dudt_exo(u::AbstractArray{<:Float64}, p::AbstractArray{<:Float64}) 
-  #   dudt(vcat(u[:, 1], exo_data[:, 1]), p)
-  # end
-  prob_neuralode = NeuralODE(dudt, tspan, odesolver(), saveat = tsteps) # Trapezoid
+  function dudt_exo(u::AbstractArray{<:Float64}, p::AbstractArray{<:Float64}, t) 
+    dudt(vcat(u[:, 1], exo_data[:, t]), p)
+  end
+
+  function dudt2(u::AbstractArray{<:Float64}, p::AbstractArray{<:Float64}, t) 
+    # dudt(vcat(u[:, 1], exo_data[:, t]), p)
+    # println(size(u))
+    # @show vcat(u, exo_data[:, Int(round(t*(datasize - 1)/(tspan[2] - tspan[1]) + (1 - (datasize - 1)*tspan[1]/(tspan[2] - tspan[1]))))])
+    dudt(vcat(u, exo_data[:, Int(round(t*(datasize - 1)/(tspan[2] - tspan[1]) + (1 - (datasize - 1)*tspan[1]/(tspan[2] - tspan[1]))))]), p)
+  end
+
+  prob = ODEProblem(dudt2, u0, tspan, nothing)
 
   # ----- define loss function for Neural ODE
   function predict_neuralode(p)
-    Array(prob_neuralode(u0, p))
+    _prob = remake(prob, p=p)
+    Array(solve(_prob, Tsit5(), saveat=tsteps, abstol = 1e-8, reltol = 1e-6))
   end
 
   function loss_neuralode(p)
     pred = predict_neuralode(p)
-    loss = sum(abs2, non_exo_data .- pred[1:output_data_dim,:])
+    loss = sum(abs2, non_exo_data .- pred)
     return loss, pred
   end
 
   # ----- define Hamiltonian log density and gradient 
-  l(θ) = -sum(abs2, non_exo_data .- predict_neuralode(θ)[1:output_data_dim]) - sum(θ .* θ)
+  l(θ) = -sum(abs2, non_exo_data .- predict_neuralode(θ)) - sum(θ .* θ)
 
   function dldθ(θ)
     x, lambda = Flux.Zygote.pullback(l,θ)
@@ -133,22 +145,22 @@ function model_bayes_exo(non_exo_data::AbstractArray,
   end
 
   # ----- define step size adaptor function and sampler
-  metric = DiagEuclideanMetric(length(prob_neuralode.p))
+  metric = DiagEuclideanMetric(length(p_model))
 
   h = Hamiltonian(metric, l, dldθ)
 
-  integrator = Leapfrog(find_good_stepsize(h, Float64.(prob_neuralode.p)))
+  integrator = Leapfrog(find_good_stepsize(h, Float64.(p_model)))
 
   prop = AdvancedHMC.NUTS{MultinomialTS, GeneralisedNoUTurn}(integrator)
 
   adaptor = StanHMCAdaptor(MassMatrixAdaptor(metric), StepSizeAdaptor(initstepsize, prop.integrator))
 
-  samples, stats = sample(h, prop, Float64.(prob_neuralode.p), numwarmup, adaptor, numsamples; progress=true)
+  samples, stats = sample(h, prop, Float64.(p_model), numwarmup, adaptor, numsamples; progress=true)
 
   losses = map(x-> x[1],[loss_neuralode(samples[i]) for i in 1:length(samples)])
 
   if log_dir != ""
-    bson(joinpath(log_dir, "bayes_model_exo.bson"), nn_model=prob_neuralode, samples=samples, losses=losses)
+    bson(joinpath(log_dir, "3_bayes_model_exo$(rand).bson"), nn_model=p_model, samples=samples, losses=losses)
   end
 
   (samples, losses, predict_neuralode)
@@ -165,7 +177,7 @@ function model_bayes_exo_with_init(non_exo_data::AbstractArray,
 
   u0 = vcat(non_exo_data[:, 1], exo_data[:, 1])
   datasize = length(non_exo_data[1,:])
-  tspan = (0.0, Float64(datasize) - 1) # (0.0, 1.0)  # (0.0, 1.0) # (0.0, Float64(datasize) - 1)
+  tspan = (0.0, 1.0) # (0.0, Float64(datasize) - 1) # (0.0, 1.0)  # (0.0, 1.0) # (0.0, Float64(datasize) - 1)
   tsteps = range(tspan[1], tspan[2], length = datasize) # range(tspan[1], tspan[2], length = datasize)
    
   input_data_dim = size(non_exo_data, 1) + size(exo_data, 1)
@@ -183,7 +195,7 @@ function model_bayes_exo_with_init(non_exo_data::AbstractArray,
   # prob_neuralode = NeuralODE(dudt, tspan, odesolver(), saveat = tsteps) # Trapezoid
 
   # prob_neuralode = find_model(94)
-  d = BSON.load("/Users/riadas/Documents/urop/OmegaExamples.jl/1_model19_good.bson")
+  d = BSON.load("/Users/riadas/Documents/urop/OmegaExamples.jl/1_model47.bson")
   prob_neuralode = d[:nn_model]
   init_theta = d[:theta]
 

@@ -7,8 +7,8 @@ using JLD, StatsPlots
 # glucose, steps, bolus, meals
 function optim_all_vars_no_exo(bin_size::Int64, batch_size::Int=4, maxiters::Int=150, lr::Float64=0.01; hypo_id::Int64=1, log_dir="")
   u0, ode_data = prepare_all_data_meals_hypo(bin_size, hypo_id=hypo_id)
-  model(ode_data, batch_size, maxiters, lr, log_dir=log_dir)
-  
+  _, _, _, pl = model(ode_data, batch_size, maxiters, lr, log_dir=log_dir)
+  pl
 end
 
 # glucose, steps, bolus 
@@ -126,7 +126,7 @@ function bayes_all_vars_exo(bin_size::Int64;
   plot!(tsteps, ode_data[4,:], color = :purple, label = "Data: Meals")
 
   for k in 1:300
-    resol = predict_neuralode(samples[numsamples-100:end][rand(1:100)])
+    resol = predict_neuralode(samples[400:end][rand(1:100)])
     plot!(tsteps,resol[1,1,:], alpha=0.4, color = :red, label = "")
     plot!(tsteps,resol[2,1,:], alpha=0.4, color = :blue, label = "")
   end
@@ -158,9 +158,13 @@ function bayes_all_vars_exo_with_init(bin_size::Int64;
   plot!(tsteps, ode_data[4,:], color = :purple, label = "Data: Meals")
 
   for k in 1:300
-    resol = node(samples[Int(round(numsamples * 0.8)):end][rand(1:(Int(round(numsamples * 0.2)) - 1))])
-    plot!(tsteps,resol[1,:], alpha=0.1, color = :red, label = "")
-    plot!(tsteps,resol[2,:], alpha=0.1, color = :blue, label = "")
+    resol = predict_neuralode(samples[Int(round(numsamples * 0.8)):end][rand(1:(Int(round(numsamples * 0.2)) - 1))])
+    if (abs(maximum(resol[1,:])) < 30)
+      plot!(tsteps,resol[1,:], alpha=0.1, color = :red, label = "")
+    end
+    if (abs(maximum(resol[2,:])) < 30)
+      plot!(tsteps,resol[2,:], alpha=0.1, color = :red, label = "")
+    end
   end
 
   idx = findmin(losses)[2]

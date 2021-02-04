@@ -123,7 +123,7 @@ function prepare_all_data_meals_hypo(bin_size::Int64;file_location = ohio5559, h
 
   start_time = minimum(times)
   times = map(time -> time - start_time, times)
-
+  println("START_TIME: ", start_time)
   ode_data_glucose = normalize_binned_data(map(i -> ode_data_glucose[i], findall(time -> (time - start_time) in times, times_glucose)), bin_size)
   ode_data_steps = normalize_binned_data(map(i -> ode_data_steps[i], findall(time -> (time - start_time) in times, times_steps)), bin_size)
 
