@@ -160,12 +160,12 @@ function model_bayes_exo_with_init(non_exo_data::AbstractArray,
                                    numsamples::Int = 500,
                                    initstepsize::Float64 = 0.45,          
                                    odesolver = Trapezoid;
-				   initid=81,
+				                           initid=81,
                                    log_dir="")
 
   u0 = vcat(non_exo_data[:, 1], exo_data[:, 1])
   datasize = length(non_exo_data[1,:])
-  tspan = (0.0, 1.0)  # (0.0, 1.0) # (0.0, Float64(datasize) - 1)
+  tspan = (0.0, Float64(datasize) - 1) # (0.0, 1.0)  # (0.0, 1.0) # (0.0, Float64(datasize) - 1)
   tsteps = range(tspan[1], tspan[2], length = datasize) # range(tspan[1], tspan[2], length = datasize)
    
   input_data_dim = size(non_exo_data, 1) + size(exo_data, 1)
@@ -182,7 +182,10 @@ function model_bayes_exo_with_init(non_exo_data::AbstractArray,
 
   # prob_neuralode = NeuralODE(dudt, tspan, odesolver(), saveat = tsteps) # Trapezoid
 
-  prob_neuralode = find_model(94)
+  # prob_neuralode = find_model(94)
+  d = BSON.load("/Users/riadas/Documents/urop/OmegaExamples.jl/1_model19_good.bson")
+  prob_neuralode = d[:nn_model]
+  init_theta = d[:theta]
 
   # ----- define loss function for Neural ODE
   function predict_neuralode(p)
@@ -205,25 +208,26 @@ function model_bayes_exo_with_init(non_exo_data::AbstractArray,
   end
 
   # ----- define step size adaptor function and sampler
-  metric = DiagEuclideanMetric(length(prob_neuralode.p))
+  metric = DiagEuclideanMetric(length(init_theta))
 
   h = Hamiltonian(metric, l, dldθ)
 
-  integrator = Leapfrog(find_good_stepsize(h, Float64.(prob_neuralode.p)))
+  integrator = Leapfrog(find_good_stepsize(h, Float64.(init_theta)))
 
   prop = AdvancedHMC.NUTS{MultinomialTS, GeneralisedNoUTurn}(integrator)
 
   adaptor = StanHMCAdaptor(MassMatrixAdaptor(metric), StepSizeAdaptor(initstepsize, prop.integrator))
 
-  samples, stats = sample(h, prop, Float64.(prob_neuralode.p), numwarmup, adaptor, numsamples; progress=true)
+  samples, stats = sample(h, prop, Float64.(init_theta), numwarmup, adaptor, numsamples; progress=true)
 
   losses = map(x-> x[1],[loss_neuralode(samples[i]) for i in 1:length(samples)])
 
+  num = rand(1:100)
   if log_dir != ""
-    bson(joinpath(log_dir, "bayes_model_exo.bson"), nn_model=prob_neuralode, samples=samples, losses=losses)
+    bson(joinpath(log_dir, "2_bayes_model_exo$(num).bson"), nn_model=prob_neuralode, samples=samples, losses=losses, theta=init_theta)
   end
 
-  (samples, losses, predict_neuralode)
+  (samples, losses, predict_neuralode, num)
 end
 
 function find_model(index::Int)

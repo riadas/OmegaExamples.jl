@@ -93,6 +93,14 @@ function model(ode_data::AbstractArray, batch_size::Int=4, maxiters::Int=150, lr
   # pl
 
   println(log_dir)
+  println("idx")
+  println(idx)
+  println("theta")
+  println(θ)
+  println("y0")
+  println(y0)
+  println("resol")
+  println(resol)
   if log_dir != ""
     println(joinpath(log_dir, "model.bson"))
     bson(joinpath(log_dir, "model.bson"), nn_model=node, theta=θ, loss=losses[idx], best_pred=resol, y0=y0)
@@ -220,18 +228,30 @@ function model_exo(non_exo_data::AbstractArray, exo_data::AbstractArray, batch_s
   y0 = vcat(train_y[:, 1], exo_data[:, 1])
   resol = Array(node(y0, θ))[1:output_data_dim, :]
 
-  # pl = plot(tsteps, non_exo_data[1,:], color = :red, label = "Data: CGM", xlabel = "t", title = "CGM, Steps, Bolus, Meals")
-  # plot!(tsteps, non_exo_data[2,:], color = :blue, label = "Data: Steps")
-  # plot!(tsteps, exo_data[1,:], color = :green, label = "Data: Bolus")
-  # plot!(tsteps, exo_data[2,:], color = :purple, label = "Data: Meals")
-  # plot!(tsteps,resol[1,:], alpha=0.5, color = :red, label = "CGM")
-  # plot!(tsteps,resol[2,:], alpha=0.5, color = :blue, label = "Steps")
-  # pl
+  println(log_dir)
+  println("idx")
+  println(idx)
+  println("theta")
+  println(θ)
+  println("y0")
+  println(y0)
+  println("resol")
+  println(resol)
 
+  pl = plot(tsteps, non_exo_data[1,:], color = :red, label = "Data: CGM", xlabel = "t", title = "CGM, Steps, Bolus, Meals")
+  plot!(tsteps, non_exo_data[2,:], color = :blue, label = "Data: Steps")
+  plot!(tsteps, exo_data[1,:], color = :green, label = "Data: Bolus")
+  plot!(tsteps, exo_data[2,:], color = :purple, label = "Data: Meals")
+  plot!(tsteps,resol[1,:], alpha=0.5, color = :red, label = "CGM")
+  plot!(tsteps,resol[2,:], alpha=0.5, color = :blue, label = "Steps")
+  pl
+
+  num = rand(1:100)
   println(log_dir)
   if log_dir != ""
-    println(joinpath(log_dir, "model.bson"))
-    bson(joinpath(log_dir, "model.bson"), nn_model=node, theta=θ, loss=losses[idx], best_pred=resol, y0=y0)
+    println(joinpath(log_dir, "1_model$(num).bson"))
+    bson(joinpath(log_dir, "1_model$(num).bson"), nn_model=node, theta=θ, loss=losses[idx], best_pred=resol, y0=y0)
+    savefig(pl, joinpath(log_dir, "1_image$(num).png"))
   end
   
   θ, losses[idx], resol
