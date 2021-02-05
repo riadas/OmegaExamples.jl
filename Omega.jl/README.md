@@ -19,10 +19,10 @@ Omega is built in Julia 1.  You can still easily install it from a Julia repl wi
 See the documentation for how to use Omega. 
 
 [docs-latest-img]: https://img.shields.io/badge/docs-latest-blue.svg
-[docs-latest-url]: https://zenna.github.io/Omega.jl/latest
+[docs-latest-url]: https://Anon.github.io/Omega.jl/latest
 
-[travis-img]: https://travis-ci.org/zenna/Omega.jl.svg?branch=master
-[travis-url]: https://travis-ci.org/zenna/Omega.jl
+[travis-img]: https://travis-ci.org/Anon/Omega.jl.svg?branch=master
+[travis-url]: https://travis-ci.org/Anon/Omega.jl
 
-[codecov-img]: https://codecov.io/github/zenna/Omega.jl/coverage.svg?branch=master
-[codecov-url]: http://codecov.io/github/zenna/Omega.jl?branch=master
+[codecov-img]: https://codecov.io/github/Anon/Omega.jl/coverage.svg?branch=master
+[codecov-url]: http://codecov.io/github/Anon/Omega.jl?branch=master

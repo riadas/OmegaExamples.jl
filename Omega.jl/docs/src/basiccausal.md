@@ -5,7 +5,7 @@ We can use `replace` and `cond` separately and in combination to ask lots of dif
 In this example, we model the relationship betwee the weather outside and teh thermostat reading inside a house.
 Broadly, the model says that the weather outside is dictataed by the time of day, while the temperature inside is determined by whether the air conditioning is on, and whether the window is open.
 
-[Notebook](https://github.com/zenna/OmegaModels.jl/blob/master/models/Thermometer/Thermometer.ipynb)
+[Notebook](https://github.com/Anon/OmegaModels.jl/blob/master/models/Thermometer/Thermometer.ipynb)
 
 First, setup simple priors over the time of day, and variables to determine whether the air conditioning is on and whether hte iwndow is open:
 

@@ -592,7 +592,7 @@ version = "0.11.0"
 deps = ["Callbacks", "Cassette", "DataStructures", "Distributions", "DocStringExtensions", "DynamicHMC", "Flux", "ForwardDiff", "Lens", "LinearAlgebra", "LogDensityProblems", "NLopt", "ProgressMeter", "Random", "Spec", "Statistics", "TransformVariables", "UnicodePlots", "Zygote"]
 git-tree-sha1 = "911ea8c73fa48e6066a14aa28c43532f07a69091"
 repo-rev = "master"
-repo-url = "https://github.com/zenna/Omega.jl.git"
+repo-url = "https://github.com/Anon/Omega.jl.git"
 uuid = "1af16e33-887a-59b3-8344-18f1671b3ade"
 version = "0.1.0"
 

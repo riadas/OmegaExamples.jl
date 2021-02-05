@@ -1,6 +1,6 @@
 # Callbacks
 
-Omega uses [Lenses](https://github.com/zenna/Lens.jl) and Callbacks to support queries such as:
+Omega uses [Lenses](https://github.com/Anon/Lens.jl) and Callbacks to support queries such as:
 
 - Time left until the simulation end
 - Convergence properties of the Markov Chains

@@ -280,7 +280,7 @@ version = "3.6.0"
 deps = ["Cassette", "Spec"]
 git-tree-sha1 = "4d1f4bcefdbb4f2a8a2302098676b2047f9cc0f0"
 repo-rev = "master"
-repo-url = "https://github.com/zenna/Lens.jl.git"
+repo-url = "https://github.com/Anon/Lens.jl.git"
 uuid = "496038af-b016-571c-b31e-8262695ac102"
 version = "0.1.1"
 

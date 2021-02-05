@@ -1,7 +1,7 @@
 # Basic Tutorial
 
 In this tutorial we will run through the basics of creating a model and conditioning it.
-This tutorial is available in [notebook version](https://github.com/zenna/OmegaModels.jl/blob/master/models/small/coin.ipynb).
+This tutorial is available in [notebook version](https://github.com/Anon/OmegaModels.jl/blob/master/models/small/coin.ipynb).
 
 First load Omega:
 

@@ -1,6 +1,6 @@
 name = "OmegaViz"
 uuid = "f1502cda-89ab-11e9-143c-c92a03599598"
-authors = ["Zenna Tavares <zennatavares@gmail.com>"]
+authors = ["Anon Anon <anon@gmail.com>"]
 version = "0.1.0"
 
 [deps]
