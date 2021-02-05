@@ -5,9 +5,9 @@ using Plots
 
 # FILE_LOCATION = "../../../OhioT1DM-training/559-ws-training.xml"
 
-# const datadir = joinpath(dirname(pathof(Glucose)), "..", "data", "OhioT1DM-training")
-# const ohio5559 = joinpath(datadir, "559-ws-training.xml")
-const ohio5559 = "/Users/riadas/Documents/urop/OhioT1DM-training/559-ws-training.xml"
+const datadir = joinpath(dirname(pathof(Glucose)), "..", "data", "OhioT1DM-training")
+const ohio5559 = joinpath(datadir, "559-ws-training.xml")
+# const ohio5559 = "/Users/riadas/Documents/urop/OhioT1DM-training/559-ws-training.xml"
 # ohio5559 = "/Users/riadas/Documents/urop/OhioT1DM-training/559-ws-training.xml"
 # const ohio5559 = "/scratch/riadas/repos/OhioT1DM-training/559-ws-training.xml"
 

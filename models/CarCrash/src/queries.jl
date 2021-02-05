@@ -19,7 +19,7 @@ function simrv(ω)
   decel = 9.0
   timestep = 0.1
   x = obs_x_pos(ω)
-  x = 38
+  # x = 38
   simulate_scene(; ACCEL = accel(ω),
                    DECEL = decel,
                    CAR_INIT_VEL = car_init_vel(ω),
@@ -30,6 +30,10 @@ end
 crashed(ω) = check_collision(simrv(ω)[1])
 
 animation_(ω) = animate_scene(simrv(ω)...)
+
+animation_move_obs = replace(~ animation_, obs_x_pos => 34)
+
+mindist(ω) = min_distance_btn_car_and_ped(simrv(ω)[1])
 
 prob(x; n = 1000) = mean(rand(x, n; alg = Omega.RejectionSample))
 

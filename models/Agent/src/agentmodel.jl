@@ -1,6 +1,7 @@
 using Agents
 using Distributions
 using DataStructures
+using UnicodePlots
 @agent Zombie OSMAgent begin
   infected::Bool
   history::CircularBuffer{Tuple{Int, Int}}
@@ -12,25 +13,31 @@ const somewherefinish = (39.52530416953533, -119.76949287425508)
 const cambridgelb = (42.3664, -71.0736)
 const cambridgeub = cambridgelb .+ 0.019
 
-function initialise(; model = ABM(Zombie, OpenStreetMapSpace(map_path)),
-                      start_ = somewherestart,
+datadir = joinpath(dirname(pathof(Agent)), "..", "data")
+CAMBRIDGEMAP = joinpath(datadir, "cambridge.osm")
+
+
+function initialise(; start_ = somewherestart,
                       finish_ = somewherefinish,
-                      map_path = TEST_MAP,
-                      histlength = 5)
+                      map_path = CAMBRIDGEMAP,
+                      histlength = 20,
+                      d = 50,
+                      model = ABM(Zombie, OpenStreetMapSpace(map_path), properties = Dict(:d => d)))
   
 
-  for _ in 1:100
+  for i in 1:100
       start = random_position(model) # At an intersection
       finish = osm_random_road_position(model) # Somewhere on a road
       route = osm_plan_route(start, finish, model)
-      add_agent!(start, model, route, finish, false, CircularBuffer{Tuple{Int, Int}}(histlength))
+      iszombie = i == 1
+      add_agent!(start, model, route, finish, iszombie, CircularBuffer{Tuple{Int, Int}}(histlength))
   end
 
   # We'll add patient zero at a specific (latitude, longitude)
-  start = osm_road(start_, model)
-  finish = osm_intersection(finish_, model)
-  route = osm_plan_route(start, finish, model)
-  add_agent!(start, model, route, finish, true, CircularBuffer{Tuple{Int, Int}}(histlength))
+  # start = osm_road(start_, model)
+  # finish = osm_intersection(finish_, model)
+  # route = osm_plan_route(start, finish, model)
+  # add_agent!(start, model, route, finish, true, CircularBuffer{Tuple{Int, Int}}(histlength))
   return model
 end
 
@@ -47,7 +54,7 @@ function agent_step!(agent, model)
 
   if agent.infected
       # Agents will be infected if they get within 50 meters of a zombie.
-      map(i -> model[i].infected = true, nearby_ids(agent, model, 50))
+      map(i -> model[i].infected = true, nearby_ids(agent, model, model.d))
   end
 end
 
@@ -67,9 +74,10 @@ function initialise_air(; start_ = somewherestart,
                           finish_ = somewherefinish,
                           map_path = TEST_MAP,
                           nlat = 100,
-                          nlon = 100)
+                          nlon = 100,
+                          d = 50)
   grid = zeros(Float64, nlat, nlon)
-  model_ = ABM(Zombie, OpenStreetMapSpace(map_path), properties = grid)
+  model_ = ABM(Zombie, OpenStreetMapSpace(map_path), properties = Dict(:grid => grid, :d => d))
   model = initialise(; start_ = start_,
                        finish_ = finish_,
                        map_path = map_path,
@@ -78,22 +86,31 @@ function initialise_air(; start_ = somewherestart,
 end
 
 s(x, α = 1) = 1/ (1 + exp(-α * x))
-s̃(x, α = 0.001) = 2(s(x, α) - 1/2 )
+s̃(x, α = 0.1) = 2(s(x, α) - 1/2 )
 
 function model_step_air!(model)  
-  grid = model.properties
-  grid != 0.0
+  grid = model.grid
+  grid .= 0.0
+  totinfected = 0
   for agent in allagents(model)
-    for (x, y) in agent.history
-      grid[x, y] += 1.0
+    if agent.infected
+      totinfected += 1
+      for (x, y) in agent.history
+        grid[x, y] += 1.0
+      end
     end
   end
+  totinfected
+  # @show sum(grid)
+  # display(UnicodePlots.heatmap(grid, width = size(grid, 1), height = size(grid, 2)))
 end
 
 @inline bounds(model) = model.space.m.bounds
 
 function agent_step_air!(agent, model)
-  grid = model.properties
+  grid = model.grid
+  move_agent!(agent, model, 25)
+
   # Move as normal
   if osm_is_stationary(agent) && rand() < 0.1
       # When stationary, give the agent a 10% chance of going somewhere else

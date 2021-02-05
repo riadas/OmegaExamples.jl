@@ -6,6 +6,6 @@ using Agents
 
 include("agentmodel.jl")
 include("viz.jl")
-# include("agentmodel")
+include("agentgenmodel.jl")
 
 end # module
