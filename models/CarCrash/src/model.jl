@@ -61,7 +61,8 @@ function simulate_scene(;NUM_LANES::Int64=3,
                                              OBSTRUCTION_POS,
                                              OBSTRUCTION_DIMS,
                                              ACCEL,
-                                             DECEL), 
+                                             DECEL,
+                                             CAR_INIT_VEL), 
       VehicleDef(AgentClass.CAR, CAR_DIMS.x, CAR_DIMS.y), 
       1))
 
@@ -74,7 +75,8 @@ function simulate_scene(;NUM_LANES::Int64=3,
                                              OBSTRUCTION_POS,
                                              OBSTRUCTION_DIMS,
                                              ACCEL,
-                                             DECEL),
+                                             DECEL,
+                                             CAR_INIT_VEL),
       VehicleDef(AgentClass.PEDESTRIAN, 1., 1.),
       42))
 
@@ -195,9 +197,10 @@ function AutomotiveDrivingModels.propagate(veh::Entity{CustomVehicleState,Vehicl
   obstruction_dims = veh.state.obstruction_dims
   accel = veh.state.accel
   decel = veh.state.decel
+  car_init_vel = veh.state.car_init_vel
   
   vehicleState = propagate(Entity(veh.state.veh, vehdef, veh.id), LatLonAccel(action.a_lat, action.a_lon), roadway, Δt)
-  return CustomVehicleState(vehicleState, veh.state.time + 1, ped_init_pos, ped_vel, obstruction_pos, obstruction_dims, accel, decel)
+  return CustomVehicleState(vehicleState, veh.state.time + 1, ped_init_pos, ped_vel, obstruction_pos, obstruction_dims, accel, decel, car_init_vel)
 end
 
 struct ConstantPedestrian <: DriverModel{PedestrianAccelLatLong}
@@ -226,6 +229,7 @@ function AutomotiveDrivingModels.propagate(veh::Entity{CustomVehicleState,Vehicl
   obstruction_dims = veh.state.obstruction_dims
   accel = veh.state.accel
   decel = veh.state.decel
+  car_init_vel = veh.state.car_init_vel
 
   carFrontPos = get_front(veh)
   obstructionTopRightX = obstruction_pos.x + obstruction_dims.x
@@ -246,9 +250,13 @@ function AutomotiveDrivingModels.propagate(veh::Entity{CustomVehicleState,Vehicl
   else # pedestrian is not visible/not in vehicle's lane
     # TODO: approach desired speed 
     # println(veh.state.veh.v) 
-    vehicleState = propagate(Entity(veh.state.veh, vehdef, veh.id), LatLonAccel(0.0, accel), roadway, Δt)
+    if (veh.state.veh.v >= car_init_vel)
+      vehicleState = propagate(Entity(veh.state.veh, vehdef, veh.id), LatLonAccel(0.0, 0.0), roadway, Δt)
+    else
+      vehicleState = propagate(Entity(veh.state.veh, vehdef, veh.id), LatLonAccel(0.0, accel), roadway, Δt)
+    end
   end
-  return CustomVehicleState(vehicleState, veh.state.time + 1, ped_init_pos, ped_vel, obstruction_pos, obstruction_dims, accel, decel)
+  return CustomVehicleState(vehicleState, veh.state.time + 1, ped_init_pos, ped_vel, obstruction_pos, obstruction_dims, accel, decel, car_init_vel)
 end
 
 struct CautiousCar <: DriverModel{CarAccelLatLong}
