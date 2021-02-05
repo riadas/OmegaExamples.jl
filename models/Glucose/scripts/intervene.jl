@@ -11,11 +11,6 @@ using Distributions
 
 # prepare data
 _, ode_data = prepare_all_data_meals_hypo(10)
-exo_data = ode_data[3:4, :]
-tspan = (0.0, 1.0)
-tsteps = range(tspan[1], tspan[2], length=size(ode_data)[2])
-datasize = size(ode_data)[2]
-u0 = ode_data[1:2, 1] 
 
 const glucose_mean, glucose_std = (159.44942528735626, 54.68441830006641)
 const steps_mean, steps_std = (2.1413793103448278, 2.478409230791181)
@@ -73,6 +68,12 @@ end
 """Example"""
 function examplep()
   network = gennet()
+  exo_data = ode_data[3:4, :]
+  tspan = (0.0, 1.0)
+  tsteps = range(tspan[1], tspan[2], length=size(ode_data)[2])
+  datasize = size(ode_data)[2]
+  u0 = ode_data[1:2, 1] 
+
   new_exo_data = copy(exo_data)
   new_exo_data[2, 8] = 4.0
   new_exo_data[2, 9] = 4.0
