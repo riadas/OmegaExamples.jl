@@ -1,0 +1,22 @@
+name = "RayMarch"
+uuid = "c7188509-fa97-49bc-9e1d-44621919a6fa"
+authors = ["Anon Anon <anon@domain.com>"]
+version = "0.1.0"
+
+[deps]
+BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
+Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
+GeometryBasics = "5c1252a2-5f33-56bf-86c9-59e7332b4326"
+ImageIO = "82e4d734-157c-48bb-816b-45c225c6df19"
+ImageMagick = "6218d12a-5da1-5696-b52f-db25d2ecc6d1"
+Images = "916415d5-f1e6-5110-898d-aaa5f9f070e0"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+ProfileView = "c46f51b8-102a-5cf2-8d2c-8597cb0e0da7"
+QuartzImageIO = "dca85d43-d64c-5e67-8c65-017450d5d020"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
+ReverseDiff = "37e2e3b7-166d-5795-8a7a-e32c996b4267"
+StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
+TestImages = "5e47fb64-e119-507b-a336-dd2b206d9990"
+Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
