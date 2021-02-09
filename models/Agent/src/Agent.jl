@@ -1,4 +1,4 @@
-__precompile__(false)
+# __precompile__(false)
 module Agent
 
 using Omega
@@ -6,6 +6,6 @@ using Agents
 
 include("agentmodel.jl")
 include("viz.jl")
-# include("agentmodel")
+include("agentgenmodel.jl")
 
 end # module

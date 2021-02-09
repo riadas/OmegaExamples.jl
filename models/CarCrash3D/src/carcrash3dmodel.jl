@@ -53,6 +53,30 @@ function query(; datapath = image_30_30_20_1,
   data = FileIO.load(datapath)[key]
   c = cam ==ₛ Image(data) 
   @leval SSMHLoop => default_cbs(n) Omega.rand(simrv2, c, n; alg = SSMH, kwargs...)
-  # SSMHLoop => default_cbs(100)
-  # rand(Ω, Climate.Θ_cond_rcd, 100; alg = Replica)
+end
+
+function querycf(; datapath = image_30_30_20_1,
+                 key = "res",
+                 n = 100,
+                 kwargs...)
+  cam = ~ camera_footage
+  data = FileIO.load(datapath)[key]
+  c1 = cam ==ₛ Image(data)
+  i1 = replace(~ CarCrash.mindist, CarCrash.car_init_vel => 10.0) 
+  # i2 = replace(~ CarCrash.mindist, CarCrash.obs_x_pos => 34)
+  i2 = CarCrash.car_init_vel
+  i3 = ~ CarCrash.mindist
+  joint = Omega.randtuple((i1, i2, i3))
+  # @assert false
+  
+  c2 = i3 ==ₛ 0.0
+  c = c1 & c2
+  # @assert false
+  # cf = cond(joint, c)
+  # a = @leval SSMHLoop => default_cbs(n) Omega.rand(i1, c, n; alg = SSMH, kwargs...)
+  # b = @leval SSMHLoop => default_cbs(n) Omega.rand(i2, c, n; alg = SSMH, kwargs...)
+  # (accel = a, obs = b)
+  # @assert false
+
+  @leval SSMHLoop => default_cbs(n) Omega.rand(joint, c, n; alg = SSMH, kwargs...)
 end
