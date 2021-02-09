@@ -1,6 +1,6 @@
 name = "Agent"
 uuid = "1e7d7365-6dea-47a9-a362-6d4bf36e0dd4"
-authors = ["Zenna Tavares <zennatavares@gmail.com>"]
+authors = ["Anon Anon <anon@domain.com>"]
 version = "0.1.0"
 
 [deps]

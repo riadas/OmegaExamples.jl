@@ -55,7 +55,9 @@ version = "0.9.0"
 
 [[AutomotiveDrivingModels]]
 deps = ["DataFrames", "Distributions", "LinearAlgebra", "Parameters", "Printf", "Random", "Reexport", "StaticArrays", "Tricks"]
-git-tree-sha1 = "db6c264aa9127cd7c3b69e93f25b783e4155e2d7"
+git-tree-sha1 = "9fa2e8dbddba0c209488324d0c2f8d55565a4492"
+repo-rev = "master"
+repo-url = "https://github.com/riadas/AutomotiveDrivingModels.jl"
 uuid = "99497e54-f3d6-53d3-a3a9-fa9315a7f1ba"
 version = "0.8.0"
 

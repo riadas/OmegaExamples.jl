@@ -231,7 +231,7 @@ function AutomotiveDrivingModels.propagate(veh::Entity{CustomVehicleState,Vehicl
   decel = veh.state.decel
   car_init_vel = veh.state.car_init_vel
 
-  carFrontPos = get_front(veh)
+  carFrontPos = posg(veh.state.veh) # get_front(veh)
   obstructionTopRightX = obstruction_pos.x + obstruction_dims.x
   obstructionTopRightY = obstruction_pos.y + obstruction_dims.y
   pedY = ped_init_pos.y + ped_vel*time * Δt

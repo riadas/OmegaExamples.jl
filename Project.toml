@@ -1,6 +1,6 @@
 name = "OmegaExamples"
 uuid = "d2b953eb-d0d4-42fe-a361-416375ef7c30"
-authors = ["Ria Das <riadas@mit.edu>"]
+authors = ["Anon Anon <anon@domain.com>"]
 version = "0.1.0"
 
 [deps]

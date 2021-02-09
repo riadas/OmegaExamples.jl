@@ -67,9 +67,9 @@ new_exo_data[2, 10] = 4.0
 function f_int(f, u, p, t)
   scaled_t = Int(round(t*(datasize - 1)/(tspan[2] - tspan[1]) + (1 - (datasize - 1)*tspan[1]/(tspan[2] - tspan[1]))))
   if scaled_t in [8, 9, 10]
-    f_intervention(vcat(u..., exo_data[1, scaled_t], 4.0), p) # intervening on bolus!
+    f(vcat(u..., exo_data[1, scaled_t], 4.0), p) # intervening on bolus!
   else
-    f_intervention(vcat(u, exo_data[:, scaled_t]...), p)
+    f(vcat(u, exo_data[:, scaled_t]...), p)
   end
 end
 
@@ -112,12 +112,12 @@ for i in 1:300
 end
 
 idx = findmin(losses1)[2]
-best_pred = predict_intervention(thetas[idx])
+best_pred = generate_series(thetas[idx])
 plot!(pl1, tsteps, best_pred[1, :], w=2, color = :black, label="")
 plot!(pl1, tsteps, best_pred[2, :], w=2, color = :black, label="")
 
 idx = findmin(losses2)[2]
-best_pred_intervene = predict_intervention(thetas[idx])
+best_pred_intervene = generate_series(thetas[idx], f_int, exo_data=new_exo_data)
 plot!(pl2, tsteps, best_pred_intervene[1, :], w=2, color = :black, label="")
 plot!(pl2, tsteps, best_pred_intervene[2, :], w=2, color = :black, label="")
 
