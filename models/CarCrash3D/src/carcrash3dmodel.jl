@@ -61,13 +61,22 @@ function querycf(; datapath = image_30_30_20_1,
                  kwargs...)
   cam = ~ camera_footage
   data = FileIO.load(datapath)[key]
-  c = cam ==ₛ Image(data)
-  i1 = replace(~ CarCrash.mindist, CarCrash.accel => 2.0)
-  i2 = replace(~ CarCrash.mindist, CarCrash.obs_x_pos => 34)
+  c1 = cam ==ₛ Image(data)
+  i1 = replace(~ CarCrash.mindist, CarCrash.car_init_vel => 10.0) 
+  # i2 = replace(~ CarCrash.mindist, CarCrash.obs_x_pos => 34)
+  i2 = CarCrash.car_init_vel
   i3 = ~ CarCrash.mindist
   joint = Omega.randtuple((i1, i2, i3))
+  # @assert false
+  
+  c2 = i3 ==ₛ 0.0
+  c = c1 & c2
+  # @assert false
   # cf = cond(joint, c)
-  a = @leval SSMHLoop => default_cbs(n) Omega.rand(i1, c, n; alg = SSMH, kwargs...)
-  b = @leval SSMHLoop => default_cbs(n) Omega.rand(i2, c, n; alg = SSMH, kwargs...)
-  (accel = a, obs = b)
+  # a = @leval SSMHLoop => default_cbs(n) Omega.rand(i1, c, n; alg = SSMH, kwargs...)
+  # b = @leval SSMHLoop => default_cbs(n) Omega.rand(i2, c, n; alg = SSMH, kwargs...)
+  # (accel = a, obs = b)
+  # @assert false
+
+  @leval SSMHLoop => default_cbs(n) Omega.rand(joint, c, n; alg = SSMH, kwargs...)
 end

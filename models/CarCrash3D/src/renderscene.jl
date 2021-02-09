@@ -56,12 +56,12 @@ function car_scene(; car_pos, ped_pos, obs_pos)
         PassiveObject(Block(Vec3([car_x + 0.65 * (1.44/1.7), car_y, car_z]), Vec3([0.4, 0.3, 0.5]) .* 0.5 .* (1.44/1.7), 0), Matte(carColor))] # trunk
         
   # simplified pedestrian: no head or limbs (just body)
-  ped = [PassiveObject(Block(Vec3([ped_x,   ped_y - 0.05, ped_z]), Vec3([0.2, 0.3, 0.3]) .* 0.5, 0), Matte(yellow)),] # body
+  ped = [PassiveObject(Block(Vec3([ped_x,   ped_y - 0.05, ped_z]), Vec3([0.2, 0.3, 0.3]) .* 0.5, 0), Matte(yellow)), # body
          PassiveObject(Block([ped_x - 0.05,  ped_y - 0.6, ped_z], [0.045, 0.3, 0.1] .* 0.5, 0), Matte(yellow)), # left leg
-         PassiveObject(Block([ped_x + 0.05,  ped_y - 0.6, ped_z], [0.045, 0.3, 0.1] .* 0.5, 0), Matte(yellow)),] # right leg
+         PassiveObject(Block([ped_x + 0.05,  ped_y - 0.6, ped_z], [0.045, 0.3, 0.1] .* 0.5, 0), Matte(yellow)), # right leg
          PassiveObject(Block([ped_x - 0.125,      ped_y, ped_z], [0.05, 0.2, 0.095] .* 0.5, 0), Matte(yellow)), # left arm
          PassiveObject(Block([ped_x + 0.125,      ped_y, ped_z], [0.05, 0.2, 0.095] .* 0.5, 0), Matte(yellow)), # right arm
-         PassiveObject(Sphere([ped_x,       ped_y + 0.4, ped_z], 0.125), Matte(yellow))] # head
+         PassiveObject(Sphere([ped_x,       ped_y + 0.4, ped_z], 0.125), Matte(yellow)) ] # head
   
   obstruction = [PassiveObject(Block(Vec3([obs_x, obs_y, obs_z]), Vec3([1.5, 0.75, 0.75]), 0), Matte(blue))]
 

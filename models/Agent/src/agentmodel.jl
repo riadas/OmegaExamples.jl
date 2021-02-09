@@ -2,7 +2,12 @@ using Agents
 using Distributions
 using DataStructures
 using UnicodePlots
-@agent Zombie OSMAgent begin
+
+mutable struct Zombie <: AbstractAgent
+  id::Int64
+  pos::Tuple{Int64,Int64,Float64}
+  route::Array{Int64,1}
+  destination::Tuple{Int64,Int64,Float64}
   infected::Bool
   history::CircularBuffer{Tuple{Int, Int}}
 end
@@ -22,10 +27,11 @@ function initialise(; start_ = somewherestart,
                       map_path = CAMBRIDGEMAP,
                       histlength = 20,
                       d = 50,
+                      nagents = 100,
                       model = ABM(Zombie, OpenStreetMapSpace(map_path), properties = Dict(:d => d)))
   
 
-  for i in 1:100
+  for i in 1:nagents
       start = random_position(model) # At an intersection
       finish = osm_random_road_position(model) # Somewhere on a road
       route = osm_plan_route(start, finish, model)

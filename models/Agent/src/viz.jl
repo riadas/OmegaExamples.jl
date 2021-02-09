@@ -49,8 +49,11 @@ function make_anim_air(; n = 200, path = "outbreakair.gif")
     gif(frames, path, fps = 15)
 end
 
-function simulate(; n = 200, d = 50)
-    model = initialise(; d = d)
+function simulate(; n = 200,
+                    d = 50,
+                    nagents = 100)
+    model = initialise(; d = d,
+                         nagents = nagents)
 
     for i in 0:n
         # @show i

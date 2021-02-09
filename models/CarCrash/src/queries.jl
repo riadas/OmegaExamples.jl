@@ -8,21 +8,24 @@ using Statistics: mean
 
 export prob, carjoint
 
-const μspeed = 3.0
-const accel = 1 ~ Normal(μspeed, 1)
-const car_init_vel = 2 ~ Normal(10.0, 2.0)
-const obs_x_pos = 4 ~ Normal(38.0, 0.01)
+μspeed = 3.0
+accel = 1 ~ Normal(μspeed, 1)
+car_init_vel = 2 ~ Normal(12.0, 4.0)
+obs_x_pos = 4 ~ Normal(38.0, 0.01)
+ped_init_vel = 5 ~ Normal(3.0, 1.0)
 # const CAR_INIT_VEL =10.0
 
 "Raandom variable over simulations"
 function simrv(ω) 
   decel = 9.0
   timestep = 0.1
-  x = obs_x_pos(ω)
-  # x = 38
+  # x = obs_x_pos(ω)
+  x = 38.0
+  @show  car_init_vel(ω)
   simulate_scene(; ACCEL = accel(ω),
                    DECEL = decel,
                    CAR_INIT_VEL = car_init_vel(ω),
+                   PED_INIT_VEL = ped_init_vel(ω),
                    timestep = timestep,
                    OBSTRUCTION_POS = VecE2(x, -7.0))
 end
