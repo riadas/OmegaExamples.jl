@@ -19,7 +19,7 @@ const bolus_mean, bolus_std = (0.030344827586206897, 0.12658940258683044)
 const meal_mean, meal_std = (0.8620689655172413, 1.8987615875887272)
 
 # extract optimal weights
-d = BSON.load("1_model13_good.bson")
+d = BSON.load("optimal_model.bson")
 theta = d[:theta]
 
 "Make time t ∈ [l, r] to index 1:n"

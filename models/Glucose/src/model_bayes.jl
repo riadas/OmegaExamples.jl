@@ -194,8 +194,7 @@ function model_bayes_exo_with_init(non_exo_data::AbstractArray,
 
   # prob_neuralode = NeuralODE(dudt, tspan, odesolver(), saveat = tsteps) # Trapezoid
 
-  # prob_neuralode = find_model(94)
-  d = BSON.load("/Users/riadas/Documents/urop/OmegaExamples.jl/1_model47.bson")
+  d = BSON.load("/path/to/model")
   prob_neuralode = d[:nn_model]
   init_theta = d[:theta]
 
@@ -245,8 +244,7 @@ end
 function find_model(index::Int)
   Core.eval(Main, :(import NNlib))
 
-  data_directory = "/scratch/riadas/repos/OmegaExamples.jl/results/optim_runs_exo/odeoptim_firsttry/"
-  # data_directory = "/scratch/riadas/runs/odeoptim_firsttry/"
+  data_directory = "/path/to/model"
   folder_names = readdir(data_directory)
   println(folder_names)
   output_dictionaries = []
