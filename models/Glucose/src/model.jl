@@ -203,6 +203,7 @@ function model_exo(non_exo_data::AbstractArray, exo_data::AbstractArray, batch_s
             ADAMW(lr), maxiters, train_y[:, 1];
             cb = log_results(θs, losses)
         )
+        @show length(losses)
       end
       # last iteration
       prob, p_model = neural_ode(train_t, input_data_dim, output_data_dim)
@@ -211,13 +212,22 @@ function model_exo(non_exo_data::AbstractArray, exo_data::AbstractArray, batch_s
             ADAMW(lr), maxiters, train_y[:, 1];
             cb = log_results(θs, losses)
       )
+      @show length(losses)
       θs, losses, prob
   end
   
   # Random.seed!(1)
   θs, losses, prob = train();
   # node = neural_ode(train_t, input_data_dim, output_data_dim)  
-  idx = findmin(losses)[2]
+  # idx = findmin(losses)[2]
+  # @show length(losses)
+  # @show idx
+
+  @show length(losses)
+  @show findmin(losses)
+
+  @show findmin(losses[(end - maxiters):end])
+  idx = findmin(losses[(end - maxiters):end])[2] + length(losses) - maxiters - 1
   θ = θs[idx]
   y0 = train_y[:, 1]
   _prob = remake(prob, p=θ)
@@ -241,7 +251,7 @@ function model_exo(non_exo_data::AbstractArray, exo_data::AbstractArray, batch_s
   plot!(tsteps,resol[2,:], alpha=0.5, color = :blue, label = "Steps")
   pl
 
-  num = rand(1:100)
+  num = string(now()) # rand(1:100) 
   println(log_dir)
   if log_dir != ""
     println(joinpath(log_dir, "1_model$(num).bson"))

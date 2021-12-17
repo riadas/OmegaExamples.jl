@@ -5,8 +5,9 @@ using Plots
 
 # FILE_LOCATION = "../../../OhioT1DM-training/559-ws-training.xml"
 
-const datadir = joinpath(dirname(pathof(Glucose)), "..", "data", "OhioT1DM-training")
-const ohio5559 = joinpath(datadir, "559-ws-training.xml")
+# const datadir = joinpath(dirname(pathof(Glucose)), "..", "data", "OhioT1DM-training")
+# const ohio5559 = joinpath(datadir, "559-ws-training.xml")
+const ohio5559 = "/Users/riadas/Documents/urop/OhioT1DM-training/559-ws-training.xml"
 
 function average_over_bins(data::AbstractArray, bin_size::Int64)
   size = min(length(data), bin_size)
@@ -99,12 +100,25 @@ function prepare_all_data(bin_size::Int64;file_location = ohio5559)
   u0, ode_data
 end
 
-function prepare_all_data_meals_hypo(bin_size::Int64;file_location = ohio5559, hypo_id::Int=1)
+function prepare_all_data_meals_hypo(bin_size::Int64;file_location = ohio5559, hypo_id::Int=2, normal=true)
   full_data_glucose = parse_data_from_xml("glucose_level"; round_time=true, file_location=file_location)
   full_data_bolus = parse_data_from_xml("bolus"; round_time=true, file_location=file_location)
   full_data_steps = parse_data_from_xml("basis_steps"; round_time=true, file_location=file_location)
   full_data_meals = parse_data_from_xml("meal"; round_time=true, file_location=file_location)
   full_data_hypoevents = parse_data_from_xml("hypo_event"; round_time=true, file_location=file_location)
+ 
+  # set start time to zero 
+  offset_start_time = minimum(vcat(full_data_glucose[1, :], 
+                                   full_data_bolus[1, :], 
+                                   full_data_steps[1, :], 
+                                   full_data_meals[1, :], 
+                                   full_data_hypoevents[1, :] ))
+
+  full_data_glucose[1, :] = full_data_glucose[1, :] .- offset_start_time
+  full_data_bolus[1, :] = full_data_bolus[1, :] .- offset_start_time
+  full_data_steps[1, :] = full_data_steps[1, :] .- offset_start_time
+  full_data_meals[1, :] = full_data_meals[1, :] .- offset_start_time
+  full_data_hypoevents[1, :] = full_data_hypoevents[1, :] .- offset_start_time
 
   times_glucose, ode_data_glucose = full_data_glucose[1,:], full_data_glucose[2,:]
   times_bolus, ode_data_bolus = full_data_bolus[1,:], full_data_bolus[2,:]
@@ -121,37 +135,55 @@ function prepare_all_data_meals_hypo(bin_size::Int64;file_location = ohio5559, h
   start_time = minimum(times)
   times = map(time -> time - start_time, times)
   println("START_TIME: ", start_time)
-  ode_data_glucose = normalize_binned_data(map(i -> ode_data_glucose[i], findall(time -> (time - start_time) in times, times_glucose)), bin_size)
-  ode_data_steps = normalize_binned_data(map(i -> ode_data_steps[i], findall(time -> (time - start_time) in times, times_steps)), bin_size)
+  if normal 
+    ode_data_glucose = normalize_binned_data(map(i -> ode_data_glucose[i], findall(time -> (time - start_time) in times, times_glucose)), bin_size)
+    ode_data_steps = normalize_binned_data(map(i -> ode_data_steps[i], findall(time -> (time - start_time) in times, times_steps)), bin_size)
+  else
+    ode_data_glucose = map(i -> ode_data_glucose[i], findall(time -> (time - start_time) in times, times_glucose))
+    ode_data_steps = map(i -> ode_data_steps[i], findall(time -> (time - start_time) in times, times_steps))
+  end
 
   ode_data_bolus_new = []
   ode_data_meals_new = []
   ode_data_hypoevents_new = []
   for time in times
     if (time + start_time) in times_bolus
-      idx = findall(x -> x == (time + start_time), unique(times_bolus))[1]
+      idx = findall(x -> x == (time + start_time), times_bolus)[1]
+      idx2 = findall(x -> x == (time + start_time), unique(times_bolus))[1]
+
+      if idx != idx2 
+        println("HERE")
+      end
+
       push!(ode_data_bolus_new, ode_data_bolus[idx])
     else
       push!(ode_data_bolus_new, 0.0)
     end
 
     if (time + start_time) in times_meals
-      idx = findall(x -> x == (time + start_time), unique(times_meals))[1]
+      idx = findall(x -> x == (time + start_time), times_meals)[1]
       push!(ode_data_meals_new, ode_data_meals[idx])
     else
       push!(ode_data_meals_new, 0.0)
     end
 
     if (time + start_time) in times_hypoevents
-      idx = findall(x -> x == (time + start_time), unique(times_hypoevents))[1]
+      idx = findall(x -> x == (time + start_time), times_hypoevents)[1]
       push!(ode_data_hypoevents_new, ode_data_hypoevents[idx])
     else
       push!(ode_data_hypoevents_new, 0.0)
     end
   end
-  ode_data_bolus = normalize_binned_data(ode_data_bolus_new, bin_size)
-  ode_data_meals = normalize_binned_data(ode_data_meals_new, bin_size)
-  ode_data_hypoevents = normalize_binned_data(ode_data_hypoevents_new, bin_size)
+
+  if normal 
+    ode_data_bolus = normalize_binned_data(ode_data_bolus_new, bin_size)
+    ode_data_meals = normalize_binned_data(ode_data_meals_new, bin_size)
+    ode_data_hypoevents = normalize_binned_data(ode_data_hypoevents_new, bin_size)
+  else
+    ode_data_bolus = ode_data_bolus_new
+    ode_data_meals = ode_data_meals_new
+    ode_data_hypoevents = ode_data_hypoevents_new
+  end
 
   ode_data = Array(transpose(hcat([ode_data_glucose, ode_data_steps, ode_data_bolus, ode_data_meals, ode_data_hypoevents]...)))
   u0 = ode_data[:, 1]
@@ -195,6 +227,21 @@ function sorted_glucose_steps_segments(;file_location = ohio5559)
   full_data_glucose = parse_data_from_xml("glucose_level"; round_time=true, file_location=file_location)
   full_data_bolus = parse_data_from_xml("bolus"; round_time=true, file_location=file_location)
   full_data_steps = parse_data_from_xml("basis_steps"; round_time=true, file_location=file_location)
+  full_data_meals = parse_data_from_xml("meal"; round_time=true, file_location=file_location)
+  full_data_hypoevents = parse_data_from_xml("hypo_event"; round_time=true, file_location=file_location)
+
+  # set start time to zero 
+  offset_start_time = minimum(vcat(full_data_glucose[1, :], 
+                                   full_data_bolus[1, :], 
+                                   full_data_steps[1, :], 
+                                   full_data_meals[1, :], 
+                                   full_data_hypoevents[1, :] ))
+
+  full_data_glucose[1, :] = full_data_glucose[1, :] .- offset_start_time
+  full_data_bolus[1, :] = full_data_bolus[1, :] .- offset_start_time
+  full_data_steps[1, :] = full_data_steps[1, :] .- offset_start_time
+  full_data_meals[1, :] = full_data_meals[1, :] .- offset_start_time
+  full_data_hypoevents[1, :] = full_data_hypoevents[1, :] .- offset_start_time
 
   times_glucose, ode_data_glucose = full_data_glucose[1,:], full_data_glucose[2,:]
   times_bolus, ode_data_bolus = full_data_bolus[1,:], full_data_bolus[2,:]
@@ -202,17 +249,15 @@ function sorted_glucose_steps_segments(;file_location = ohio5559)
 
   times_gs = intersect(times_glucose, times_steps)
   shifted_times_gs = [0.0, times_gs[1:length(times_gs) - 1]...][1:length(times_gs)]
-  consec_time_differences = times_gs .- shifted_times_gs
+  consec_time_differences = (times_gs .- shifted_times_gs)[2:length(times_gs)]
   jump_indices = findall(x -> !(x in [0.0, 5.0]), consec_time_differences)
-  shifted_jump_indices = [0.0, jump_indices[1:length(jump_indices) - 1]...][1:length(jump_indices)]
-  consec_segment_lengths = map(x -> Int(x), jump_indices .- shifted_jump_indices)
 
   segments = []
   for i in 1:length(jump_indices)
     if i == 1
-      push!(segments, times_gs[1:jump_indices[i] - 1])
+      push!(segments, times_gs[1:jump_indices[i]])
     else
-      push!(segments, times_gs[jump_indices[i - 1]:jump_indices[i] - 1])
+      push!(segments, times_gs[(jump_indices[i - 1] + 1):jump_indices[i]])
     end
   end
 
@@ -255,7 +300,7 @@ function parse_data_from_xml(data_name::String; round_time::Bool=false, file_loc
   
   # shift times to begin at t=0
   start_time = minimum(parsed_data[1])
-  parsed_data = (map(time -> time - start_time, parsed_data[1]), parsed_data[2])
+  # parsed_data = (map(time -> time - start_time, parsed_data[1]), parsed_data[2])
   
   # reshape into matrix
   Array(transpose(hcat(parsed_data...)))

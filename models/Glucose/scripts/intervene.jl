@@ -13,13 +13,14 @@ using Omega
 # prepare data
 _, ode_data = prepare_all_data_meals_hypo(10)
 
-const glucose_mean, glucose_std = (159.44942528735626, 54.68441830006641)
-const steps_mean, steps_std = (2.1413793103448278, 2.478409230791181)
-const bolus_mean, bolus_std = (0.030344827586206897, 0.12658940258683044)
-const meal_mean, meal_std = (0.8620689655172413, 1.8987615875887272)
+_, ode_data_unnormal = prepare_all_data_meals_hypo(10, normal=false)
+glucose_mean, glucose_std = (mean(ode_data_unnormal[1, :]), std(ode_data_unnormal[1, :])) # (159.44942528735626, 54.68441830006641)
+steps_mean, steps_std = (mean(ode_data_unnormal[2, :]), std(ode_data_unnormal[2, :])) # (2.1413793103448278, 2.478409230791181)
+bolus_mean, bolus_std = (mean(ode_data_unnormal[3, :]), std(ode_data_unnormal[3, :])) # (0.030344827586206897, 0.12658940258683044)
+meal_mean, meal_std = (mean(ode_data_unnormal[4, :]), std(ode_data_unnormal[4, :])) # (0.8620689655172413, 1.8987615875887272)
 
 # extract optimal weights
-d = BSON.load("optimal_model.bson")
+d = BSON.load("new_model_hypo2.bson")
 theta = d[:theta]
 
 "Make time t ∈ [l, r] to index 1:n"
@@ -84,15 +85,15 @@ function examplep()
   u0 = ode_data[1:2, 1] 
 
   # Generate new exogenous data
-  new_exo_data = copy(exo_data)
-  new_exo_data[2, 8] = 4.0
-  new_exo_data[2, 9] = 4.0
-  new_exo_data[2, 10] = 4.0
+  new_exo_data = deepcopy(exo_data)
+  new_exo_data[2, 8] = 3.5 # 13, 3.5 
+  new_exo_data[2, 9] = 3.5 # 14, 3.5
+  new_exo_data[2, 10] = 3.5 # 15, 3.5
   function f_int(f, u, p, t)
     scaled_t = scaleidx(t, tspan[1], tspan[2], datasize)
       # scaled_t = Int(round(t*(datasize - 1)/(tspan[2] - tspan[1]) + (1 - (datasize - 1)*tspan[1]/(tspan[2] - tspan[1]))))
     if scaled_t in [8, 9, 10]
-        f(vcat(u..., exo_data[1, scaled_t], 4.0), p) # intervening on bolus!
+        f(vcat(u..., exo_data[1, scaled_t], 3.5), p) # intervening on meals!
     else
         f(vcat(u, exo_data[:, scaled_t]...), p)
     end
@@ -128,12 +129,12 @@ function genplot(resol1s, resol2s, tsteps, ode_data, nsamples, exo_data, new_exo
   pl1 = plot(datatsteps, ode_data[1,:], seriestype = :scatter, color = :red, w=1.5, label = "CGM", xlabel = "t", title = "CGM, Steps, Bolus, Meals", legend = :top)
   plot!(pl1, datatsteps, ode_data[2,:], seriestype = :scatter, color = :blue, w=1.5, label = "Steps")
   plot!(pl1, datatsteps, ode_data[3,:], seriestype = :scatter, color = :green, w=1.5, label = "Bolus")
-  plot!(pl1, datatsteps, ode_data[4,:], seriestype = :scatter, color = :purple, w=1.5, label = "Meals")
+  plot!(pl1, datatsteps, ode_data[4,:], color = :purple, w=1.5, label = "Meals")
 
   pl2 = plot(datatsteps, ode_data[1,:], seriestype = :scatter, color = :red, w=1.5, label = "CGM", xlabel = "t", title = "CGM, Steps, Bolus, Meals", legend = :top)
   plot!(pl2, datatsteps, ode_data[2,:], seriestype = :scatter, color = :blue, w=1.5, label = "Steps")
   plot!(pl2, datatsteps, ode_data[3,:], seriestype = :scatter, color = :green, w=1.5, label = "Bolus")
-  plot!(pl2, datatsteps, vcat(ode_data[4,1:7]..., 4.0, 4.0, 4.0, ode_data[4, 11:end]...), color = :purple, w=1.5, label = "Data: Meals")
+  plot!(pl2, datatsteps, vcat(new_exo_data[2,1:7]..., 3.5, 3.5, 3.5, new_exo_data[2, 11:end]...), color = :purple, w=1.5, label = "Data: Meals")
 
   for i = 1:nsamples
     resol1 = resol1s[i]
@@ -162,14 +163,14 @@ function genmodel(ω)
 
   # Generate new exogenous data
   new_exo_data = copy(exo_data)
-  new_exo_data[2, 8] = 4.0
-  new_exo_data[2, 9] = 4.0
-  new_exo_data[2, 10] = 4.0
+  new_exo_data[2, 8] = 3.5
+  new_exo_data[2, 9] = 3.5
+  new_exo_data[2, 10] = 3.5
   function f_int(f, u, p, t)
     scaled_t = scaleidx(t, tspan[1], tspan[2], datasize)
       # scaled_t = Int(round(t*(datasize - 1)/(tspan[2] - tspan[1]) + (1 - (datasize - 1)*tspan[1]/(tspan[2] - tspan[1]))))
     if scaled_t in [T-1, T, T+1]
-        f(vcat(u..., exo_data[1, scaled_t], 4.0), p) # intervening on bolus!
+        f(vcat(u..., exo_data[1, scaled_t], 3.5), p) # intervening on bolus!
     else
         f(vcat(u, exo_data[:, scaled_t]...), p)
     end

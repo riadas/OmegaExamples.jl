@@ -26,7 +26,8 @@ function optim_one_var_no_exo(var::String, bin_size::Int64, batch_size::Int=4, m
 end
 
 # glucose, steps, bolus, meals
-function optim_all_vars_exo(bin_size::Int64, batch_size::Int=4, maxiters::Int=150, lr::Float64=0.01; hypo_id::Int64=1, log_dir="")
+function optim_all_vars_exo(bin_size::Int64, batch_size::Int=4, maxiters::Int=150, lr::Float64=0.01; hypo_id::Int64=2, log_dir="")
+  @show hypo_id
   u0, ode_data = prepare_all_data_meals_hypo(bin_size, hypo_id=hypo_id)
   non_exo_data = ode_data[1:2, :]
   exo_data = ode_data[3:4, :]
